@@ -1,22 +1,23 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using UnityEngine;
-using UnityEngine.Assertions;
 using Color = UnityEngine.Color;
 using Random = UnityEngine.Random;
 
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class Grid : MonoBehaviour
 {
     MeshFilter meshFilter;
     MeshRenderer meshRenderer;
 
+    [SerializeField]
+    bool showGizmos = true;
+
     Cell[,] grid;
     float[,] noiseMap;
 
     [SerializeField]
-    [Range(3, 500)]
+    [Range(5, 500)]
     int size = 100;
     int old_size = int.MinValue;
 
@@ -32,47 +33,101 @@ public class Grid : MonoBehaviour
     private float heightScale = 20f;
     private float old_heightScale = float.MaxValue;
 
-
     float[,] falloffMap;
+
+    [SerializeField]
+    Material terrainMaterial;
+
 
     // Start is called before the first frame update
     void Start()
     {
-        GenerateNoisemap();
-        GenerateGrid();
-        DrawTerrainMesh();
+        meshRenderer = gameObject.GetComponent<MeshRenderer>();
+        meshFilter = gameObject.GetComponent<MeshFilter>();
+
+        RedrawAll();
     }
 
-    void DrawTerrainMesh(bool recreateComponents = true)
+    private void RedrawAll(bool recreateArrays = false)
     {
-        if (size < 3) return;
+        GenerateNoisemap(recreateArrays);
+        GenerateGrid(recreateArrays);
 
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
         List<Vector2> uvs = new List<Vector2>();
 
+        ComputetTerrainData(vertices, triangles, uvs);
+        ComputeEdgeData(vertices, triangles, uvs);
+        DrawCompletedMesh(vertices, triangles, uvs);
+        DrawTexture();
+    }
+
+    private void DrawCompletedMesh(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
+    {
+        Mesh mesh = new Mesh();
+        mesh.vertices = vertices.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.uv = uvs.ToArray();
+        mesh.RecalculateNormals();
+
+        meshFilter.mesh = mesh;
+    }
+
+    void DrawTexture()
+    {
+        Texture2D texture = new Texture2D(size, size);
+        Color[] colorMap = new Color[size * size];
         for (int y = 0; y < size; y++)
         {
             for (int x = 0; x < size; x++)
             {
                 Cell c = grid[x, y];
-                if (!c.isWater)
+
+                colorMap[y * size + x] = c.isWater ? RandomBlue : RandomGreen;
+                //Color.blue : Color.green;          
+            }
+        }
+
+        texture.filterMode = FilterMode.Point;
+        texture.SetPixels(colorMap);
+        texture.Apply();
+
+        meshRenderer.material = terrainMaterial;
+        meshRenderer.material.mainTexture = texture;
+    }
+
+    Color RandomGreen => new Color(Random.value * 0.1f, 1f - Random.value * 0.1f, Random.value * 0.1f);
+
+    Color RandomBlue => new Color(Random.value * 0.1f, Random.value * 0.1f, 1f - Random.value * 0.1f);
+
+    void ComputetTerrainData(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
+    {
+        if (size < 3) return;
+
+        int height = 0;
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                if (!grid[x, y].isWater)
                 {
-                    Vector3 v1 = new Vector3(x - .5f, 0, y + .5f);
-                    Vector3 v2 = new Vector3(x + .5f, 0, y + .5f);
-                    Vector3 v3 = new Vector3(x - .5f, 0, y - .5f);
-                    Vector3 v4 = new Vector3(x + .5f, 0, y - .5f);
+                    //height = grid[x, y].isWater ? -1 : 0;
 
-                    Vector3[] v = new Vector3[] { v1, v2, v3, v2, v4, v3 };
+                    Vector3 vertA = new Vector3(x - .5f, height, y + .5f);
+                    Vector3 vertB = new Vector3(x + .5f, height, y + .5f);
+                    Vector3 vertC = new Vector3(x - .5f, height, y - .5f);
+                    Vector3 vertD = new Vector3(x + .5f, height, y - .5f);
 
-
-                    Vector2 uv1 = new Vector2(x / (float)size, y / (float)size);
-                    Vector2 uv2 = new Vector2((x + 1) / (float)size, y / (float)size);
-                    Vector2 uv3 = new Vector2(x / (float)size, (y + 1) / (float)size);
-                    Vector2 uv4 = new Vector2((x + 1) / (float)size, (y + 1) / (float)size);
+                    Vector3[] v = { vertA, vertB, vertC, vertB, vertD, vertC };
 
 
-                    Vector2[] uv = new Vector2[] { uv1, uv2, uv3, uv2, uv4, uv3 };
+                    Vector2 uvA = new Vector2(x / (float)size, y / (float)size);
+                    Vector2 uvB = new Vector2((x + 1) / (float)size, y / (float)size);
+                    Vector2 uvC = new Vector2(x / (float)size, (y + 1) / (float)size);
+                    Vector2 uvD = new Vector2((x + 1) / (float)size, (y + 1) / (float)size);
+
+                    Vector2[] uv = { uvA, uvB, uvC, uvB, uvD, uvC };
 
                     for (int k = 0; k < 6; k++)
                     {
@@ -80,26 +135,67 @@ public class Grid : MonoBehaviour
                         triangles.Add(triangles.Count);
                         uvs.Add(uv[k]);
                     }
+                }
 
+            }
+        }
+    }
+
+    void ComputeEdgeData(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
+    {
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                Cell c = grid[x, y];
+                if (!c.isWater)
+                {
+                    Vector3 vert_top_left = new Vector3(x - 0.5f, 0, y + 0.5f);
+                    Vector3 vert_top_right = new Vector3(x + 0.5f, 0, y + 0.5f);
+                    Vector3 vert_bottom_left = new Vector3(x - 0.5f, 0, y - 0.5f);
+                    Vector3 vert_bottom_right = new Vector3(x + 0.5f, 0, y - 0.5f);
+
+                    // left edge
+                    if (x > 0 && grid[x - 1, y].isWater) TryAddWaterEdgeMesh(vert_top_left, vert_bottom_left, vertices, triangles, uvs);
+
+                    // right edge
+                    if (x < size - 1 && grid[x + 1, y].isWater) TryAddWaterEdgeMesh(vert_bottom_right, vert_top_right, vertices, triangles, uvs);
+
+                    // bottom edge
+                    if (y > 0 && grid[x, y - 1].isWater) TryAddWaterEdgeMesh(vert_bottom_left, vert_bottom_right, vertices, triangles, uvs);
+
+                    // top edge
+                    if (y < size - 1 && grid[x, y + 1].isWater) TryAddWaterEdgeMesh(vert_top_right, vert_top_left, vertices, triangles, uvs);
                 }
             }
         }
+    }
 
-        Mesh mesh = new Mesh();
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
-        mesh.uv = uvs.ToArray();
-        mesh.RecalculateNormals();
+    private void TryAddWaterEdgeMesh(Vector3 a, Vector3 b, List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
+    {
+        // vertices a & b are given, we compute c & d
+        // a-b
+        // |/|
+        // c-d
 
-        
-        if (recreateComponents)
-             meshFilter = gameObject.AddComponent<MeshFilter>();
+        // a & b are at y=0, c & d will be at y=-1
+        Vector3 c = a; // new struct, same values
+        Vector3 d = b; // new struct, same values
+        c.y = -1;
+        d.y = -1;
 
-        meshFilter.mesh = mesh;
+        Vector3[] v = { a, b, c, b, d, c };
 
-        if (recreateComponents)
-             meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        // TODO : decide for the real UVs
+        Vector2 uvDummy = Vector2.zero;
+        Vector2[] uv = { uvDummy, uvDummy, uvDummy, uvDummy, uvDummy, uvDummy };
 
+        for (int k = 0; k < 6; k++)
+        {
+            vertices.Add(v[k]);
+            triangles.Add(triangles.Count);
+            uvs.Add(uv[k]);
+        }
     }
 
     private void GenerateNoisemap(bool force = false)
@@ -121,15 +217,14 @@ public class Grid : MonoBehaviour
         {
             for (int x = 0; x < size; x++)
             {
-                // FALLOFF calculation =============
+                // FALLOFF calculation ==========
                 float xv = x / (float)size * 2f - 1f;
                 float yv = y / (float)size * 2f - 1f;
                 float v = Mathf.Max(Mathf.Abs(xv), Mathf.Abs(yv));
 
-                falloffMap[x, y] = Mathf.Pow(v, 3f) /
-                    (Mathf.Pow(v, 3f) + Mathf.Pow(2.2f - 2.2f * v, 3f));
+                falloffMap[x, y] = Mathf.Pow(v, 3f) / (Mathf.Pow(v, 3f) + Mathf.Pow(2.2f - 2.2f * v, 3f));
 
-                // NOISEVALUE =============================
+                // NOISE VALUE ==================
                 float noiseVal = Mathf.PerlinNoise(x * scale + xOffset, y * scale + yOffset);
                 noiseMap[x, y] = noiseVal - falloffMap[x, y];
             }
@@ -161,16 +256,19 @@ public class Grid : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
-    {
-        if (!Application.isPlaying) return;
 
+
+    private void Update()
+    {
         if (old_scale != scale || old_size != size)
         {
-            GenerateNoisemap(true);
-            GenerateGrid(true);
-            DrawTerrainMesh(false);
+            RedrawAll(true);
         }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying || !showGizmos) return;
 
         DrawGizmos(-heightScale - 1);
     }
@@ -198,7 +296,7 @@ public class Grid : MonoBehaviour
 
                 if (c.isWater)
                 {
-                    Gizmos.color = Color.blue;
+                    Gizmos.color = Color.magenta;
                     pos.y = 0;
                 }
                 else
@@ -212,6 +310,15 @@ public class Grid : MonoBehaviour
             }
         }
 
+        //test vector3 struct
+        Vector3 v01 = Vector3.up * 10f;
+        Vector3 v02 = v01;
+        v02.y = 1.5f;
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(v01, 2);
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(v02, 2);
     }
 }
 
