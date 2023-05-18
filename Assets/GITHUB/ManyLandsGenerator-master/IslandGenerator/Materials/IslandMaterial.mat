@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: IslandMaterial
+  m_Shader: {fileID: 4800000, guid: dd6c0ddbb946a46268144cb96f844c08, type: 3}
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ColorMap:
+        m_Texture: {fileID: 2800000, guid: 823c2a5d7c20644c1995c1aac9dc8f8a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DecalTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FillTex:
+        m_Texture: {fileID: 2800000, guid: 89996170d05884ca192379bdca24c142, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 8a10e271e0d2fd843ba91a7b7c0cf160, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OutlineTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Ramp:
+        m_Texture: {fileID: 2800000, guid: 2fa488d2d99d27c4a80d8eefdc0916b3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ContrastBoost: 9.94
+    - _IntensityModifier: 0
+    - _Outline: 0.013
+    - _OutlineWidth: 0.03
+    - _QuantizationLevels: 2.11
+    - _RedrawRate: 0
+    - _Scale: 1
+    - _Scribbliness: -0.02
+    - _Shininess: 0.078125
+    m_Colors:
+    - _CliffColor: {r: 0.8455882, g: 0.68367434, b: 0.47875214, a: 0}
+    - _Color: {r: 0.5514706, g: 0.5514706, b: 0.5514706, a: 1}
+    - _FillColour: {r: 0, g: 0, b: 0, a: 1}
+    - _OutlineColor: {r: 0.08823532, g: 0.08823532, b: 0.08823532, a: 1}
+    - _OutlineColour: {r: 0, g: 0, b: 0, a: 0.5019608}
+    - _SpecColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _ZeroPos: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []

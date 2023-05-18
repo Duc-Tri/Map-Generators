@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="450" height="700">
+
+  <!-- arrow marker; grabbed this from http://www.redblobgames.com/articles/curved-paths/common.js which is based on example in svg spec -->
+  <defs>
+    <marker id="arrow" viewbox="0 0 10 10" orient="auto" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(240, 30%, 35%)"/>
+    </marker>
+  </defs>
+  
+  <!-- polygon structure -->
+  <image x="10" y="0" width="200px" height="200px" xlink:href="voronoi-2-lloyd.png" />
+
+  <!-- annotations -->
+  <image x="10" y="220" width="133px" height="133px" xlink:href="downslopes.png" />
+  <image x="160" y="220" width="133px" height="133px" xlink:href="voronoi-land-ocean-lake.png" />
+  <image x="310" y="220" width="133px" height="133px" xlink:href="moisture.png" />
+
+  <!-- outputs -->
+  <image x="10" y="400" width="200px" height="200px" xlink:href="biomes-noisy-7.png" />
+  <image x="240" y="400" width="200px" height="200px" xlink:href="biomes-noisy-7.png" />
+
+  <!-- labels, grouped together for font settings -->
+  <g font-family="Open Sans,sans-serif" font-size="12pt" text-anchor="middle">
+    <text x="330" y="60">1. start with</text>
+    <text x="330" y="80">a graph structure</text>
+    <text x="330" y="100">made of polygons</text>
+
+    <text x="330" y="180">2. annotate</text>
+
+    <text x="105" y="620">3a. output to polygons</text>
+    <text x="340" y="620">3b. optionally to tiles</text>
+  </g>
+
+  <!-- arrows -->
+  <g marker-end="url(#arrow)" fill="none" stroke-width="2.5px" stroke="hsl(240, 30%, 35%)">
+    <path d="M 210 130 Q 250 200 250 215"/>
+    <path d="M 210 130 Q 250 200 80 215"/>
+    <path d="M 210 130 Q 250 200 350 215"/>
+    
+    <path d="M 80 353 Q 85 370 105 395"/>
+    <path d="M 200 353 Q 190 370 125 395"/>
+    <path d="M 350 353 Q 300 370 145 395"/>
+    
+    <path d="M 210 500 L 235 500"/>
+  </g>
+  
+  <!-- grid -->
+  <path transform="translate(240,400)" fill="none" stroke-width="1px" stroke="white"
+        d="M 0 0 l 200 0 M 0 20 l 200 0 M 0 40 l 200 0 M 0 60 l 200 0 M 0 80 l 200 0 M 0 100 l 200 0 M 0 120 l 200 0 M 0 140 l 200 0 M 0 160 l 200 0 M 0 180 l 200 0 M 0 200 l 200 0
+           M 0 0 l 0 200 M 20 0 l 0 200 M 40 0 l 0 200 M 60 0 l 0 200 M 80 0 l 0 200 M 100 0 l 0 200 M 120 0 l 0 200 M 140 0 l 0 200 M 160 0 l 0 200 M 180 0 l 0 200 M 200 0 l 0 200" />
+  
+</svg>
