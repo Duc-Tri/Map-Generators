@@ -1,0 +1,3 @@
+To use FlatKit you first need to unpack one of the following packages, depending on your project's Render Pipeline:
+  - "[Render Pipeline] Built-In"
+  - "[Render Pipeline] Universal (URP)"

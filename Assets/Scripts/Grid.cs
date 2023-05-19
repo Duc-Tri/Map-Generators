@@ -9,6 +9,7 @@ public class Grid : MonoBehaviour
 {
     MeshFilter meshFilter;
     MeshRenderer meshRenderer;
+    Mesh mesh;
 
     [SerializeField]
     bool showGizmos = true;
@@ -42,8 +43,12 @@ public class Grid : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        mesh = new Mesh();
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         meshRenderer = gameObject.GetComponent<MeshRenderer>();
         meshFilter = gameObject.GetComponent<MeshFilter>();
+        meshFilter.mesh = mesh;
+
 
         RedrawAll();
     }
@@ -65,13 +70,11 @@ public class Grid : MonoBehaviour
 
     private void DrawCompletedMesh(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
     {
-        Mesh mesh = new Mesh();
+        mesh.Clear();
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.uv = uvs.ToArray();
         mesh.RecalculateNormals();
-
-        meshFilter.mesh = mesh;
     }
 
     void DrawTexture()
@@ -156,22 +159,22 @@ public class Grid : MonoBehaviour
                     Vector3 vert_bottom_right = new Vector3(x + 0.5f, 0, y - 0.5f);
 
                     // left edge
-                    if (x > 0 && grid[x - 1, y].isWater) TryAddWaterEdgeMesh(vert_top_left, vert_bottom_left, vertices, triangles, uvs);
+                    if (x > 0 && grid[x - 1, y].isWater) AddWaterEdgeData(vert_top_left, vert_bottom_left, vertices, triangles, uvs);
 
                     // right edge
-                    if (x < size - 1 && grid[x + 1, y].isWater) TryAddWaterEdgeMesh(vert_bottom_right, vert_top_right, vertices, triangles, uvs);
+                    if (x < size - 1 && grid[x + 1, y].isWater) AddWaterEdgeData(vert_bottom_right, vert_top_right, vertices, triangles, uvs);
 
                     // bottom edge
-                    if (y > 0 && grid[x, y - 1].isWater) TryAddWaterEdgeMesh(vert_bottom_left, vert_bottom_right, vertices, triangles, uvs);
+                    if (y > 0 && grid[x, y - 1].isWater) AddWaterEdgeData(vert_bottom_left, vert_bottom_right, vertices, triangles, uvs);
 
                     // top edge
-                    if (y < size - 1 && grid[x, y + 1].isWater) TryAddWaterEdgeMesh(vert_top_right, vert_top_left, vertices, triangles, uvs);
+                    if (y < size - 1 && grid[x, y + 1].isWater) AddWaterEdgeData(vert_top_right, vert_top_left, vertices, triangles, uvs);
                 }
             }
         }
     }
 
-    private void TryAddWaterEdgeMesh(Vector3 a, Vector3 b, List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
+    private void AddWaterEdgeData(Vector3 a, Vector3 b, List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
     {
         // vertices a & b are given, we compute c & d
         // a-b
@@ -181,8 +184,8 @@ public class Grid : MonoBehaviour
         // a & b are at y=0, c & d will be at y=-1
         Vector3 c = a; // new struct, same values
         Vector3 d = b; // new struct, same values
-        c.y = -1;
-        d.y = -1;
+        c.y = -10;
+        d.y = -10;
 
         Vector3[] v = { a, b, c, b, d, c };
 
