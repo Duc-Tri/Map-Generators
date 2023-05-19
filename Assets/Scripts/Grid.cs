@@ -1,3 +1,4 @@
+using NaughtyAttributes;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,6 +11,19 @@ public class Grid : MonoBehaviour
     MeshFilter meshFilter;
     MeshRenderer meshRenderer;
     Mesh mesh;
+
+
+    [SerializeField]
+    private GameObject[] treePrefab;
+
+    [SerializeField]
+    public float treeNoiseScale = 0.5f;
+
+    [SerializeField]
+    [Range(0f, 1f)]
+    public float treeDensity = 0.5f;
+
+    [HorizontalLine]
 
     [SerializeField]
     bool showGizmos = true;
@@ -39,18 +53,25 @@ public class Grid : MonoBehaviour
     [SerializeField]
     Material terrainMaterial;
 
+    Color RandomGreen => new Color(Random.value * 0.2f, 0.6f - Random.value * 0.1f, Random.value * 0.2f);
+
+    Color RandomBlue => new Color(Random.value * 0.1f, Random.value * 0.1f, 1f - Random.value * 0.1f);
+
 
     // Start is called before the first frame update
     void Start()
+    {
+        InitMesh();
+        RedrawAll();
+    }
+
+    private void InitMesh()
     {
         mesh = new Mesh();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         meshRenderer = gameObject.GetComponent<MeshRenderer>();
         meshFilter = gameObject.GetComponent<MeshFilter>();
         meshFilter.mesh = mesh;
-
-
-        RedrawAll();
     }
 
     private void RedrawAll(bool recreateArrays = false)
@@ -58,14 +79,51 @@ public class Grid : MonoBehaviour
         GenerateNoisemap(recreateArrays);
         GenerateGrid(recreateArrays);
 
+        // mesh -------------------------------------------
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
         List<Vector2> uvs = new List<Vector2>();
-
         ComputetTerrainData(vertices, triangles, uvs);
         ComputeEdgeData(vertices, triangles, uvs);
         DrawCompletedMesh(vertices, triangles, uvs);
         DrawTexture();
+
+        // trees -----------------------------------------
+        GenerateTrees();
+    }
+
+    private void GenerateTrees()
+    {
+        //float[,] treeMap = new float[];
+
+        old_scale = scale;
+
+        float xOffset = Random.Range(-1000f, 10000f);
+        float yOffset = Random.Range(-1000f, 10000f);
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                Cell cell = grid[x, y];
+
+                // NOISE VALUE ==================
+                float noiseVal = Mathf.PerlinNoise(x * treeNoiseScale + xOffset, y * treeNoiseScale + yOffset);
+                //treeMap[x, y] = noiseVal;
+                if (!cell.isWater)
+                {
+                    float ran = Random.Range(0f, treeDensity);
+                    if (noiseVal < ran)
+                    {
+                        GameObject tree = Instantiate(treePrefab[Random.Range(0, treePrefab.Length)], transform);
+                        tree.transform.position = new Vector3(x, 0, y);
+                        tree.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360f), 0);
+                        tree.transform.localScale = Vector3.one * Random.Range(0.8f, 1.2f);
+                    }
+                }
+
+            }
+        }
     }
 
     private void DrawCompletedMesh(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
@@ -100,9 +158,6 @@ public class Grid : MonoBehaviour
         meshRenderer.material.mainTexture = texture;
     }
 
-    Color RandomGreen => new Color(Random.value * 0.1f, 1f - Random.value * 0.1f, Random.value * 0.1f);
-
-    Color RandomBlue => new Color(Random.value * 0.1f, Random.value * 0.1f, 1f - Random.value * 0.1f);
 
     void ComputetTerrainData(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
     {

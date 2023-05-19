@@ -154,8 +154,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b03719a2e59bb0c4da4f3b6f9a7dd0d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  showGizmos: 1
-  size: 77
+  treePrefab:
+  - {fileID: 1000011619202780, guid: c9f9dd50ef67bab4e92a81ea235a0fc7, type: 3}
+  - {fileID: 1000011006408926, guid: bbd4935edf6ebc14b83761a9ae92dd02, type: 3}
+  - {fileID: 1000014284232592, guid: d41b3a5006d417e42af345785736b386, type: 3}
+  treeNoiseScale: 0.1
+  treeDensity: 0.5
+  showGizmos: 0
+  size: 273
   scale: 0.04
   heightScale: 20
   terrainMaterial: {fileID: 2100000, guid: e2859a22ee4222144b6e42fbfb2b585b, type: 2}
@@ -757,7 +763,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1950335629}
   m_LocalRotation: {x: 0.000000021855694, y: 0, z: -0, w: 1}
-  m_LocalPosition: {x: 117.2, y: -5, z: 110}
+  m_LocalPosition: {x: 117.2, y: -2, z: 110}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
