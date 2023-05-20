@@ -1,8 +1,13 @@
 ﻿using UnityEngine;
 
-public class Cell
+namespace MapGenerator
 {
-    public bool isWater = false;
-    public Color color;
-    internal float noiseValue;
+    public class Cell
+    {
+        public bool isWater = false;
+
+        public Color color;
+
+        internal float noiseValue;
+    }
 }

@@ -136,7 +136,7 @@ GameObject:
   - component: {fileID: 580870590}
   - component: {fileID: 580870589}
   m_Layer: 0
-  m_Name: Grid
+  m_Name: Map
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -498,8 +498,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1644130531}
-  m_LocalRotation: {x: -0.0918787, y: 0.8871887, z: -0.20105569, w: -0.40500775}
-  m_LocalPosition: {x: 152.47931, y: 39.5784, z: 152.61227}
+  m_LocalRotation: {x: 0.25950244, y: -0.67859554, z: 0.2808743, w: 0.62711746}
+  m_LocalPosition: {x: 211.01212, y: 49.0523, z: 131.9507}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
