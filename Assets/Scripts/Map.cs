@@ -1,4 +1,4 @@
-
+using NaughtyAttributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +12,9 @@ namespace MapGenerator
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     public class Map : MonoBehaviour
     {
-        MeshFilter meshFilter;
-        MeshRenderer meshRenderer;
-        Mesh mesh;
+        private MeshFilter meshFilter;
+        private MeshRenderer meshRenderer;
+        private Mesh mesh;
 
         [SerializeField]
         private GameObject[] treePrefab;
@@ -29,23 +29,24 @@ namespace MapGenerator
         public float treeDensity = 0.5f;
         float old_treeDensity = float.MinValue;
 
+        [HorizontalLine]
         [SerializeField]
         bool showGizmos = true;
 
-        Cell[,] grid;
-        float[,] noiseMap;
+        private Cell[,] grid;
+        private float[,] noiseMap;
 
         [SerializeField]
         [Range(5, 500)]
-        int size = 100;
+        int MapSize = 100;
         int old_size = int.MinValue;
 
         [SerializeField]
         [Range(0.001f, 0.2f)]
-        private float scale = 0.04f;
+        private float MapNoiseScale = 0.04f;
         private float old_scale = float.MaxValue;
 
-        private const float WATER_NOISE_LEVEL = 0.4f;
+        private const float WATER_LEVEL = 0.4f;
 
         [SerializeField]
         [Range(1f, 150f)]
@@ -57,9 +58,13 @@ namespace MapGenerator
         [SerializeField]
         Material terrainMaterial;
 
-        Color RandomGreen => new Color(Random.value * 0.2f, 0.6f - Random.value * 0.1f, Random.value * 0.2f);
+        Color RandomGreen => new Color(153 / 255f + Random.value * 0.05f,
+            191 / 255f - Random.value * 0.05f,
+            115 / 255f + Random.value * 0.05f);
 
-        Color RandomBlue => new Color(Random.value * 0.1f, Random.value * 0.1f, 1f - Random.value * 0.1f);
+        Color RandomBlue => new Color(Random.value * 0.2f,
+            Random.value * 0.2f,
+            0.5f + Random.value * 0.1f);
 
 
         // Start is called before the first frame update
@@ -107,8 +112,8 @@ namespace MapGenerator
             float xOffset = Random.Range(-1000f, 10000f);
             float yOffset = Random.Range(-1000f, 10000f);
 
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
+            for (int y = 0; y < MapSize; y++)
+                for (int x = 0; x < MapSize; x++)
                 {
                     Cell cell = grid[x, y];
 
@@ -136,15 +141,15 @@ namespace MapGenerator
 
         void DrawTexture()
         {
-            Texture2D texture = new Texture2D(size, size);
-            Color[] colorMap = new Color[size * size];
-            for (int y = 0; y < size; y++)
+            Texture2D texture = new Texture2D(MapSize, MapSize);
+            Color[] colorMap = new Color[MapSize * MapSize];
+            for (int y = 0; y < MapSize; y++)
             {
-                for (int x = 0; x < size; x++)
+                for (int x = 0; x < MapSize; x++)
                 {
                     Cell c = grid[x, y];
 
-                    colorMap[y * size + x] = c.isWater ? RandomBlue : RandomGreen;
+                    colorMap[y * MapSize + x] = c.isWater ? RandomBlue : RandomGreen;
                     //Color.blue : Color.green;          
                 }
             }
@@ -160,11 +165,11 @@ namespace MapGenerator
 
         void ComputetTerrainData(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
         {
-            if (size < 3) return;
+            if (MapSize < 3) return;
 
             int height = 0;
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
+            for (int y = 0; y < MapSize; y++)
+                for (int x = 0; x < MapSize; x++)
                     if (!grid[x, y].isWater)
                     {
                         //height = grid[x, y].isWater ? -1 : 0;
@@ -177,10 +182,10 @@ namespace MapGenerator
                         Vector3[] v = { vertA, vertB, vertC, vertB, vertD, vertC };
 
 
-                        Vector2 uvA = new Vector2(x / (float)size, y / (float)size);
-                        Vector2 uvB = new Vector2((x + 1) / (float)size, y / (float)size);
-                        Vector2 uvC = new Vector2(x / (float)size, (y + 1) / (float)size);
-                        Vector2 uvD = new Vector2((x + 1) / (float)size, (y + 1) / (float)size);
+                        Vector2 uvA = new Vector2(x / (float)MapSize, y / (float)MapSize);
+                        Vector2 uvB = new Vector2((x + 1) / (float)MapSize, y / (float)MapSize);
+                        Vector2 uvC = new Vector2(x / (float)MapSize, (y + 1) / (float)MapSize);
+                        Vector2 uvD = new Vector2((x + 1) / (float)MapSize, (y + 1) / (float)MapSize);
 
                         Vector2[] uv = { uvA, uvB, uvC, uvB, uvD, uvC };
 
@@ -196,8 +201,8 @@ namespace MapGenerator
 
         void ComputeEdgeData(List<Vector3> vertices, List<int> triangles, List<Vector2> uvs)
         {
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
+            for (int y = 0; y < MapSize; y++)
+                for (int x = 0; x < MapSize; x++)
                 {
                     Cell c = grid[x, y];
                     if (!c.isWater)
@@ -211,13 +216,13 @@ namespace MapGenerator
                         if (x > 0 && grid[x - 1, y].isWater) AddWaterEdgeData(vert_top_left, vert_bottom_left, vertices, triangles, uvs);
 
                         // right edge
-                        if (x < size - 1 && grid[x + 1, y].isWater) AddWaterEdgeData(vert_bottom_right, vert_top_right, vertices, triangles, uvs);
+                        if (x < MapSize - 1 && grid[x + 1, y].isWater) AddWaterEdgeData(vert_bottom_right, vert_top_right, vertices, triangles, uvs);
 
                         // bottom edge
                         if (y > 0 && grid[x, y - 1].isWater) AddWaterEdgeData(vert_bottom_left, vert_bottom_right, vertices, triangles, uvs);
 
                         // top edge
-                        if (y < size - 1 && grid[x, y + 1].isWater) AddWaterEdgeData(vert_top_right, vert_top_left, vertices, triangles, uvs);
+                        if (y < MapSize - 1 && grid[x, y + 1].isWater) AddWaterEdgeData(vert_top_right, vert_top_left, vertices, triangles, uvs);
                     }
                 }
 
@@ -252,31 +257,31 @@ namespace MapGenerator
 
         private void GenerateNoisemap(bool force = false)
         {
-            if (size < 3) return;
+            if (MapSize < 3) return;
 
             if (force || noiseMap == null)
             {
-                falloffMap = new float[size, size];
-                noiseMap = new float[size, size];
+                falloffMap = new float[MapSize, MapSize];
+                noiseMap = new float[MapSize, MapSize];
             }
 
-            old_scale = scale;
+            old_scale = MapNoiseScale;
 
             float xOffset = Random.Range(-1000f, 10000f);
             float yOffset = Random.Range(-1000f, 10000f);
 
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
+            for (int y = 0; y < MapSize; y++)
+                for (int x = 0; x < MapSize; x++)
                 {
                     // FALLOFF calculation ==========
-                    float xv = x / (float)size * 2f - 1f;
-                    float yv = y / (float)size * 2f - 1f;
+                    float xv = x / (float)MapSize * 2f - 1f;
+                    float yv = y / (float)MapSize * 2f - 1f;
                     float v = Mathf.Max(Mathf.Abs(xv), Mathf.Abs(yv));
 
                     falloffMap[x, y] = Mathf.Pow(v, 3f) / (Mathf.Pow(v, 3f) + Mathf.Pow(2.2f - 2.2f * v, 3f));
 
                     // NOISE VALUE ==================
-                    float noiseVal = Mathf.PerlinNoise(x * scale + xOffset, y * scale + yOffset);
+                    float noiseVal = Mathf.PerlinNoise(x * MapNoiseScale + xOffset, y * MapNoiseScale + yOffset);
                     noiseMap[x, y] = noiseVal - falloffMap[x, y];
                 }
 
@@ -284,22 +289,22 @@ namespace MapGenerator
 
         private void GenerateGrid(bool force = false)
         {
-            if (size < 3) return;
+            if (MapSize < 3) return;
 
             if (force || grid == null)
-                grid = new Cell[size, size];
+                grid = new Cell[MapSize, MapSize];
 
-            old_size = size;
+            old_size = MapSize;
             float noiseval;
 
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
+            for (int y = 0; y < MapSize; y++)
+                for (int x = 0; x < MapSize; x++)
                 {
                     Cell c = new Cell();
                     noiseval = noiseMap[x, y];
-                    c.isWater = noiseval < WATER_NOISE_LEVEL;
+                    c.isWater = noiseval < WATER_LEVEL;
                     c.noiseValue = noiseval;
-                    float colorVal = (noiseval - WATER_NOISE_LEVEL) * (1f / (1f - WATER_NOISE_LEVEL));
+                    float colorVal = (noiseval - WATER_LEVEL) * (1f / (1f - WATER_LEVEL));
                     c.color = new Color(colorVal, colorVal, colorVal, 1);
                     grid[x, y] = c;
                 }
@@ -310,7 +315,7 @@ namespace MapGenerator
 
         private void Update()
         {
-            if (old_scale != scale || old_size != size)
+            if (old_scale != MapNoiseScale || old_size != MapSize)
             {
                 RedrawAll(true);
             }
@@ -332,8 +337,8 @@ namespace MapGenerator
         private void DrawGizmos(float yOffset = 0)
         {
             Vector3 pos = new Vector3();
-            for (int yGrid = 0; yGrid < size; yGrid++)
-                for (int xGrid = 0; xGrid < size; xGrid++)
+            for (int yGrid = 0; yGrid < MapSize; yGrid++)
+                for (int xGrid = 0; xGrid < MapSize; xGrid++)
                 {
                     pos.x = xGrid;
                     pos.z = yGrid;
@@ -357,7 +362,7 @@ namespace MapGenerator
                     else
                     {
                         Gizmos.color = c.color;
-                        pos.y = (c.noiseValue - WATER_NOISE_LEVEL) * heightScale;
+                        pos.y = (c.noiseValue - WATER_LEVEL) * heightScale;
                     }
 
                     pos.y += yOffset;

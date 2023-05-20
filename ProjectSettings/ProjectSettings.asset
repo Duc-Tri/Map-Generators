@@ -4,7 +4,7 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 24
-  productGUID: 38141c89345e35140984e3e154199b68
+  productGUID: bff84e7922b8bf24695a25aa2e9f6b19
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
-  productName: Map-Gen
+  companyName: PYXXYM
+  productName: MapGenerators
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -65,9 +65,9 @@ PlayerSettings:
   preserveFramebufferAlpha: 0
   disableDepthAndStencilBuffers: 0
   androidStartInFullscreen: 1
-  androidRenderOutsideSafeArea: 1
+  androidRenderOutsideSafeArea: 0
   androidUseSwappy: 1
-  androidBlitType: 0
+  androidBlitType: 1
   androidResizableWindow: 0
   androidDefaultWindowWidth: 1920
   androidDefaultWindowHeight: 1080
@@ -114,7 +114,7 @@ PlayerSettings:
   xboxOneEnableTypeOptimization: 0
   xboxOnePresentImmediateThreshold: 0
   switchQueueCommandMemory: 0
-  switchQueueControlMemory: 16384
+  switchQueueControlMemory: 0
   switchQueueComputeMemory: 262144
   switchNVNShaderPoolsGranularity: 33554432
   switchNVNDefaultPoolsGranularity: 16777216
@@ -125,7 +125,7 @@ PlayerSettings:
   stadiaTargetFramerate: 0
   vulkanNumSwapchainBuffers: 3
   vulkanEnableSetSRGBWrite: 0
-  vulkanEnablePreTransform: 1
+  vulkanEnablePreTransform: 0
   vulkanEnableLateAcquireNextImage: 0
   vulkanEnableCommandBufferRecycling: 1
   m_SupportedAspectRatios:
@@ -148,14 +148,14 @@ PlayerSettings:
   enableOpenGLProfilerGPURecorders: 1
   useHDRDisplay: 0
   D3DHDRBitDepth: 0
-  m_ColorGamuts: 00000000
+  m_ColorGamuts: 0000000003000000
   targetPixelDensity: 30
   resolutionScalingMode: 0
   resetResolutionOnWindowResize: 0
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Standalone: com.DefaultCompany.Map-Gen
+    Standalone: com.PYXXYM.MapGenerators
   buildNumber:
     Standalone: 0
     iPhone: 0
@@ -174,7 +174,7 @@ PlayerSettings:
   CreateWallpaper: 0
   APKExpansionFiles: 0
   keepLoadedShadersAlive: 0
-  StripUnusedMeshComponents: 1
+  StripUnusedMeshComponents: 0
   VertexChannelCompressionMask: 4054
   iPhoneSdkVersion: 988
   iOSTargetOSVersionString: 12.0
@@ -235,8 +235,8 @@ PlayerSettings:
   iOSAutomaticallyDetectAndAddCapabilities: 1
   appleEnableProMotion: 0
   shaderPrecisionModel: 0
-  clonedFromGUID: c0afd0d1d80e3634a9dac47e8a0426ea
-  templatePackageId: com.unity.template.3d@8.1.3
+  clonedFromGUID: 9870af204204ab84596f8a656f2f2ce6
+  templatePackageId: com.unity.template.universal@12.4.0
   templateDefaultScene: Assets/Scenes/SampleScene.unity
   useCustomMainManifest: 0
   useCustomLauncherManifest: 0
@@ -268,7 +268,7 @@ PlayerSettings:
   AndroidMinifyRelease: 0
   AndroidMinifyDebug: 0
   AndroidValidateAppBundleSize: 1
-  AndroidAppBundleSizeToValidate: 150
+  AndroidAppBundleSizeToValidate: 100
   m_BuildTargetIcons: []
   m_BuildTargetPlatformIcons: []
   m_BuildTargetBatching:
@@ -278,10 +278,10 @@ PlayerSettings:
   - m_BuildTarget: tvOS
     m_StaticBatching: 1
     m_DynamicBatching: 0
-  - m_BuildTarget: Android
+  - m_BuildTarget: iPhone
     m_StaticBatching: 1
     m_DynamicBatching: 0
-  - m_BuildTarget: iPhone
+  - m_BuildTarget: Android
     m_StaticBatching: 1
     m_DynamicBatching: 0
   - m_BuildTarget: WebGL
@@ -321,24 +321,19 @@ PlayerSettings:
   - m_BuildTarget: XboxOnePlayer
     m_GraphicsJobMode: 0
   m_BuildTargetGraphicsAPIs:
-  - m_BuildTarget: AndroidPlayer
-    m_APIs: 150000000b000000
-    m_Automatic: 1
   - m_BuildTarget: iOSSupport
     m_APIs: 10000000
     m_Automatic: 1
   - m_BuildTarget: AppleTVSupport
     m_APIs: 10000000
     m_Automatic: 1
+  - m_BuildTarget: AndroidPlayer
+    m_APIs: 150000000b000000
+    m_Automatic: 1
   - m_BuildTarget: WebGLSupport
     m_APIs: 0b000000
-    m_Automatic: 1
-  m_BuildTargetVRSettings:
-  - m_BuildTarget: Standalone
-    m_Enabled: 0
-    m_Devices:
-    - Oculus
-    - OpenVR
+    m_Automatic: 0
+  m_BuildTargetVRSettings: []
   m_DefaultShaderChunkSizeInMB: 16
   m_DefaultShaderChunkCount: 0
   openGLRequireES31: 0
@@ -350,6 +345,8 @@ PlayerSettings:
     iPhone: 1
     tvOS: 1
   m_BuildTargetGroupLightmapEncodingQuality:
+  - m_BuildTarget: Standalone
+    m_EncodingQuality: 1
   - m_BuildTarget: Android
     m_EncodingQuality: 1
   - m_BuildTarget: iPhone
@@ -593,7 +590,18 @@ PlayerSettings:
   ps4AllowPS5Detection: 0
   ps4GPU800MHz: 1
   ps4attribEyeToEyeDistanceSettingVR: 0
-  ps4IncludedModules: []
+  ps4IncludedModules:
+  - libc.prx
+  - libSceAudioLatencyEstimation.prx
+  - libSceFace.prx
+  - libSceFaceTracker.prx
+  - libSceFios2.prx
+  - libSceHand.prx
+  - libSceHandTracker.prx
+  - libSceHeadTracker.prx
+  - libSceJobManager.prx
+  - libSceNpToolkit2.prx
+  - libSceS3DConversion.prx
   ps4attribVROutputEnabled: 0
   monoEnv: 
   splashScreenBackgroundSourceLandscape: {fileID: 0}
@@ -619,7 +627,8 @@ PlayerSettings:
   scriptingDefineSymbols: {}
   additionalCompilerArguments: {}
   platformArchitecture: {}
-  scriptingBackend: {}
+  scriptingBackend:
+    Standalone: 0
   il2cppCompilerConfiguration: {}
   managedStrippingLevel:
     EmbeddedLinux: 1
@@ -638,7 +647,7 @@ PlayerSettings:
   incrementalIl2cppBuild: {}
   suppressCommonWarnings: 1
   allowUnsafeCode: 0
-  useDeterministicCompilation: 0
+  useDeterministicCompilation: 1
   enableRoslynAnalyzers: 1
   selectedPlatform: 0
   additionalIl2CppArgs: 
@@ -646,17 +655,18 @@ PlayerSettings:
   gcIncremental: 1
   assemblyVersionValidation: 1
   gcWBarrierValidation: 0
-  apiCompatibilityLevelPerPlatform: {}
+  apiCompatibilityLevelPerPlatform:
+    Standalone: 3
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: Template_3D
+  metroPackageName: Template_Lightweight
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: Template_3D
+  metroApplicationDescription: Template_Lightweight
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
