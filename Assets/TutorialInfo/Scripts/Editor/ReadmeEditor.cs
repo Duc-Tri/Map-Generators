@@ -45,6 +45,8 @@ public class ReadmeEditor : Editor {
 	[MenuItem("Documentation/Simple Water Shader")]
 	static Readme SelectReadme() 
 	{
+		return null;
+
 		var ids = AssetDatabase.FindAssets("Readme t:Readme");
 		if (ids.Length == 1)
 		{

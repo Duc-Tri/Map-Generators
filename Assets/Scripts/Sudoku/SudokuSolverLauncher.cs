@@ -13,8 +13,7 @@ public class SudokuSolverLauncher : MonoBehaviour
 
     List<SudokuCell> cellList;
 
-    // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         float transStep = 1f / 10f;
         SudokuSolver solver = new SudokuSolver();
@@ -34,7 +33,6 @@ public class SudokuSolverLauncher : MonoBehaviour
             {
                 t.color = colors[cell.NumBox];
             }
-
         }
 
         original.gameObject.SetActive(false);
