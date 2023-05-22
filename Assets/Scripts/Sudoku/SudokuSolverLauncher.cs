@@ -1,35 +1,43 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class SudokuSolverLauncher : MonoBehaviour
 {
     [SerializeField]
-    private SudokuCell cell;
+    private SudokuCell original;
 
-    Color[] colors = new Color[] { Color.grey, Color.green, Color.blue, Color.red, Color.magenta, Color.white, Color.black, Color.yellow, Color.cyan };
-
+    Color[] colors = new Color[] { Color.grey, Color.green, Color.blue, Color.red, Color.white, Color.magenta, Color.black, Color.yellow, Color.cyan };
 
     List<SudokuCell> cellList;
-
-
 
     // Start is called before the first frame update
     void Start()
     {
-        float trans = 1f / 9;
+        float transStep = 1f / 10f;
+        SudokuSolver solver = new SudokuSolver();
 
-        for (int i = 0; i < 9 * 9; i++)
+        for (int i = 0; i < 9 * 9; i++) // 9 * 9
         {
-            SudokuCell go = Instantiate(cell, this.transform);
-            go.name = "CELL_" + i;
-            Color c = colors[((int)(i / 9)) % colors.Length];
-            c.a = (1 + i % 9) * trans;
+            SudokuCell cell = Instantiate(original, this.transform);
+            cell.SetPosition(i);
+            solver.Add(i, cell);
 
-            go.GetComponent<Image>().color = c;
+            Color c = colors[(int)(i / 9f) % colors.Length];
+            c.a = (1 + i % 9) * transStep;
+
+            cell.GetComponent<Image>().color = c;
+
+            foreach (var t in cell.GetComponentsInChildren<TextMeshProUGUI>())
+            {
+                t.color = colors[cell.NumBox];
+            }
+
         }
-        cell.gameObject.SetActive(false);
+
+        original.gameObject.SetActive(false);
     }
 
 
