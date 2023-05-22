@@ -2,7 +2,7 @@
 
 namespace MapGenerator
 {
-    public class Cell
+    public class MapCell
     {
         public bool isWater = false;
 

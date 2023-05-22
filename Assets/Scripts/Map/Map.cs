@@ -33,7 +33,7 @@ namespace MapGenerator
         [SerializeField]
         bool showGizmos = true;
 
-        private Cell[,] grid;
+        private MapCell[,] grid;
         private float[,] noiseMap;
 
         [SerializeField]
@@ -115,7 +115,7 @@ namespace MapGenerator
             for (int y = 0; y < MapSize; y++)
                 for (int x = 0; x < MapSize; x++)
                 {
-                    Cell cell = grid[x, y];
+                    MapCell cell = grid[x, y];
 
                     // NOISE VALUE ==================
                     float noiseVal = Mathf.PerlinNoise(x * treeNoiseScale + xOffset, y * treeNoiseScale + yOffset);
@@ -147,7 +147,7 @@ namespace MapGenerator
             {
                 for (int x = 0; x < MapSize; x++)
                 {
-                    Cell c = grid[x, y];
+                    MapCell c = grid[x, y];
 
                     colorMap[y * MapSize + x] = c.isWater ? RandomBlue : RandomGreen;
                     //Color.blue : Color.green;          
@@ -204,7 +204,7 @@ namespace MapGenerator
             for (int y = 0; y < MapSize; y++)
                 for (int x = 0; x < MapSize; x++)
                 {
-                    Cell c = grid[x, y];
+                    MapCell c = grid[x, y];
                     if (!c.isWater)
                     {
                         Vector3 vert_top_left = new Vector3(x - 0.5f, 0, y + 0.5f);
@@ -292,7 +292,7 @@ namespace MapGenerator
             if (MapSize < 3) return;
 
             if (force || grid == null)
-                grid = new Cell[MapSize, MapSize];
+                grid = new MapCell[MapSize, MapSize];
 
             old_size = MapSize;
             float noiseval;
@@ -300,7 +300,7 @@ namespace MapGenerator
             for (int y = 0; y < MapSize; y++)
                 for (int x = 0; x < MapSize; x++)
                 {
-                    Cell c = new Cell();
+                    MapCell c = new MapCell();
                     noiseval = noiseMap[x, y];
                     c.isWater = noiseval < WATER_LEVEL;
                     c.noiseValue = noiseval;
@@ -352,7 +352,7 @@ namespace MapGenerator
                     */
 
                     // DISPLAY MAP =======================================
-                    Cell c = grid[xGrid, yGrid];
+                    MapCell c = grid[xGrid, yGrid];
 
                     if (c.isWater)
                     {
