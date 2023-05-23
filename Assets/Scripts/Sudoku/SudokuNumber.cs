@@ -3,27 +3,31 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 
-// One of the nine numbers of the 81 Sudoku cells
+// One of the 9 numbers of the 81 Sudoku cells
 public class SudokuNumber : MonoBehaviour, IPointerClickHandler
 {
     TextMeshProUGUI TMPtext;
     SudokuCell parentCell;
-    int num;
+    int number;
 
-    private void Awake()
+    private void Start()
     {
         TMPtext = GetComponent<TextMeshProUGUI>();
-        int.TryParse(TMPtext.text, out num);
+        int.TryParse(TMPtext.text, out number);
         parentCell = transform.parent.GetComponent<SudokuCell>();
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        Debug.Log("L" + parentCell.IndexLine +
-            "_C" + parentCell.IndexColumn +
-            "_B" + parentCell.IndexBox + " ___ " + TMPtext.text);
+        if (SudokuSolver.IsInGameMode)
+        {
+            Debug.Log("SudokuNumber::OnPointerClick PL" + parentCell.IndexLine +
+                "_PC" + parentCell.IndexColumn +
+                "_PB" + parentCell.IndexBox +
+                " === " + TMPtext.text);
 
-        parentCell.OnClick(this, num);
+            parentCell.SetASolution(number);
+        }
     }
 
 }
