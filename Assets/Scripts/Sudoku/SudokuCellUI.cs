@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 // One of the 9*9 cells on the Sudoku
-public partial class SudokuCellUI : MonoBehaviour
+public class SudokuCellUI : MonoBehaviour
 {
     private static Color[] colors = new Color[] { Color.grey, Color.green, Color.blue, Color.red, Color.white, Color.magenta, Color.black, Color.yellow, Color.cyan };
 
@@ -15,7 +15,7 @@ public partial class SudokuCellUI : MonoBehaviour
     private static float originalFontSize;
     private RectTransform container;
 
-    public bool[] numberAuthorized = new bool[9];
+    public bool[] possibilities = new bool[9];
 
     public bool SolutionSet { get; private set; }
 
@@ -35,7 +35,7 @@ public partial class SudokuCellUI : MonoBehaviour
         {
             if (SolutionSet)
                 for (int i = 0; i < 9; i++)
-                    if (numberAuthorized[i])
+                    if (possibilities[i])
                         return (i + 1);
 
             return -999;
@@ -48,13 +48,13 @@ public partial class SudokuCellUI : MonoBehaviour
         get
         {
             int entropy = 0;
-            foreach (var n in numberAuthorized) if (n) entropy++;
+            foreach (var n in possibilities) if (n) entropy++;
 
             return entropy;
         }
     }
 
-    internal void SetCoordinates(int i)
+    public void SetCoordinates(int i)
     {
         IndexCell = i;
         IndexLine = (int)(i / 9f);
@@ -81,7 +81,7 @@ public partial class SudokuCellUI : MonoBehaviour
 
         for (byte i = 0; i < 9; i++)
         {
-            numberAuthorized[i] = true;
+            possibilities[i] = true;
             TMPnumbers[i].name = TMPnumbers[i].text = (i + 1).ToString();
 
             //Debug.Log("AddComponent_" + i);
@@ -109,7 +109,7 @@ public partial class SudokuCellUI : MonoBehaviour
     }
 
     // solutionNumber = 1..9
-    internal bool TrySetASolution(int solutionNumber)
+    public bool TrySetASolution(int solutionNumber)
     {
         Debug.Log("SudokuCell::TrySetASolution_C" + IndexCell + "_X" + IndexColumn + "_Y" + IndexLine + "_B" + IndexBox + " >>> " + solutionNumber);
         Debug.Assert(solutionNumber >= 1 && solutionNumber <= 9);
@@ -119,7 +119,7 @@ public partial class SudokuCellUI : MonoBehaviour
 
         int index = solutionNumber - 1; // -1 because in real Sudoku, we have 1..9, but the array index is 0..8
 
-        if (!numberAuthorized[index])
+        if (!possibilities[index])
         {
             Debug.LogWarning(IndexCell + " ► TrySetASolution IMPOSSIBLE TO SET ########## " + solutionNumber);
 
@@ -141,7 +141,7 @@ public partial class SudokuCellUI : MonoBehaviour
 
         // set all numbers NOT authorized except the parameter
         for (int i = 0; i < 9; i++)
-            numberAuthorized[i] = (i == index);
+            possibilities[i] = (i == index);
 
         UpdateUI();
 
@@ -157,7 +157,7 @@ public partial class SudokuCellUI : MonoBehaviour
     }
 
     // A CONSTRAINT = A NUMBER YOU CANNOT USE ANYMORE
-    internal void AddConstraint(int number)
+    public void AddConstraint(int number)
     {
         // ALREADY MARKED, STOP HERE ! ----------------------------------------
         if (SolutionSet) return;
@@ -167,20 +167,20 @@ public partial class SudokuCellUI : MonoBehaviour
         Debug.Log(IndexCell + " ► SudokuCell::AddConstraint_N" + number + "_I" + index);
 
         // IMPOSSIBLE TO SET THIS CONSTRAINT ----------------------------------
-        if (!numberAuthorized[index])
+        if (!possibilities[index])
         {
             Debug.LogWarning(IndexCell + " ► IMPOSSIBLE TO SATISFY THIS CONSTRAINT !!!");
             return;
         }
 
-        numberAuthorized[index] = false;
+        possibilities[index] = false;
 
         TMPnumbers[index].gameObject.SetActive(false);
 
         // CHECK IF ONLY ONE POSSIBILITY REMAINS => WE HAVE A SOLUTION --------
         int indexUniqueSolution = -1;
         for (int i = 0; i < 9; i++)
-            if (numberAuthorized[i])
+            if (possibilities[i])
             {
                 if (indexUniqueSolution < 0)
                     indexUniqueSolution = i;
@@ -199,11 +199,11 @@ public partial class SudokuCellUI : MonoBehaviour
         TrySetASolution(indexUniqueSolution + 1);
     }
 
-    internal void Reset()
+    public void Reset()
     {
         SolutionSet = false;
 
-        for (int i = 0; i < 9; i++) numberAuthorized[i] = true;
+        for (int i = 0; i < 9; i++) possibilities[i] = true;
 
         UpdateUI();
     }
@@ -213,8 +213,8 @@ public partial class SudokuCellUI : MonoBehaviour
         for (int n = 0; n < 9; n++)
         {
             var t = TMPnumbers[n];
-            t.gameObject.SetActive(numberAuthorized[n]);
-            if (numberAuthorized[n])
+            t.gameObject.SetActive(possibilities[n]);
+            if (possibilities[n])
             {
                 t.fontSize = originalFontSize;
                 t.fontStyle = TMPro.FontStyles.Bold;
@@ -229,25 +229,4 @@ public partial class SudokuCellUI : MonoBehaviour
         }
     }
 
-    //private List<int> solutionsTested = new List<int>();
-
-    internal void TryARandomSolution999()
-    {
-        if (SolutionSet) return;
-
-        List<int> possibilities = new List<int>();
-        for (int n = 0; n < 9; n++)
-            if (numberAuthorized[n])
-                possibilities.Add(n);
-
-        int randIndexToTest = possibilities[(int)(Random.value * possibilities.Count)];
-
-        //////////// solutionsTested.Add(randIndexToTest);
-        //////////RecordAndPropagateSolution(randIndexToTest);
-    }
-
-    internal void ResetTriedSolutions9999()
-    {
-        //////solutionsTested.Clear();
-    }
 }

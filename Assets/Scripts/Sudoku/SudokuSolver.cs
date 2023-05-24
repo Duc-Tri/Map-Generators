@@ -141,7 +141,7 @@ public class SudokuSolver : MonoBehaviour
         gameState = GameStates.INGAME;
     }
 
-    internal static void RecordSolutionStep(SudokuCellUI sudokuCell)
+    public static void RecordSolutionStep(SudokuCellUI sudokuCell)
     {
         if (gameState != GameStates.REPLAYING && gameState != GameStates.WON)
         {
@@ -180,40 +180,77 @@ public class SudokuSolver : MonoBehaviour
         if (IsGameWon()) return;
 
         gameState = GameStates.SOLVING;
-
-        // THE FIRST NODE, WE SUPPOSE THE CURRENT GRID IS VALID
-        SolvingNode currentSolvingNode = new SolvingNode();
-        currentSolvingNode.SetGrid(Sudoku2Text());
-
         maxRecurseSteps = 0; // sanity check
 
-        /*
-
-        while (true)
-        {
-            currentSolvingNode = TrySolveCurrentNode(currentSolvingNode);
-
-            if (IsGameWon() || --maxSteps == 0 || currentSolvingNode == null) break;  // STOP LOOP
-        }
-        */
-        //////////////////////////////////////Recursive 
+        // THE FIRST NODE, WE SUPPOSE THE CURRENT GRID IS VALID
+        SolvingNode firstSolvingNode = new SolvingNode();
+        firstSolvingNode.SetGrid(Sudoku2Text());
+        RecursiveSolveSudokuNode(firstSolvingNode);
     }
 
     static int maxRecurseSteps = 0; // sanity check
-    private static void RecursiveSolveSudokuNode(SolvingNode currentSolvingNode)
+    //static SudokuGrid solvingGrid = new SudokuGrid();
+
+    //█████████████████████████████████████████████████████████████████████████████████████████████
+    private static void RecursiveSolveSudokuNode(SolvingNode solvingNode)
     {
-        if (currentSolvingNode == null || IsGameWon() || ++maxRecurseSteps > 2000000) return;  // STOP RECURSION
+        // 1] seek for lowest entropy in CELLS that dont have solution
+        // 2] if not found (and not WIN), this node is INVALID, return to parent
 
-        // 1] seek for lowest entropy in children
-        // 2] if not found, this node is INVALID, return
+        // 3] build Sudokus with ALL available NUMBERS from that found lowest-entropy-node
+        // 4] if a Sudoku is a WINNER break ◄◄◄◄◄◄◄◄◄◄
 
-        // 3] relaunch the function by setting ALL available NUMBERS in that found node
-        // 5] if game not WON, mark this node as INVALID
-        // 6] restart loop @1 (continue to next lowest entropy child)
+        // 5] else for each VALID Sudoku, build the corresponding node, link to parent (current) node
+        // 6] relaunch the function on each of these VALID node/grid
+        // 7] mark CELL as parsed, restart loop @1 (continue to next lowest entropy child)
+
+        if (solvingNode == null || ++maxRecurseSteps > 1000) return;  // STOP RECURSION
+
+        SudokuGrid nodeGrid = new SudokuGrid(solvingNode.flatTextGrid);
+        SudokuCell lowestEntropyCell = null;
+
+        do
+        {
+            // 1] seek for lowest entropy in CELLS that dont have solution
+            lowestEntropyCell = nodeGrid.GetLowestEntropyCell();
+
+            // 2] if not found (and not WIN), this node is INVALID, return to parent
+            if (lowestEntropyCell == null) return;
+
+            // 3] build Sudokus with ALL available NUMBERS from that found lowest-entropy-node
+            List<int> numbersToTest = lowestEntropyCell.GetPossibilitiesInNumbersList();
+
+            Debug.Assert(numbersToTest != null && numbersToTest.Count > 1);
+
+            foreach (int number in numbersToTest)
+            {
+                SudokuGrid childGrid = new SudokuGrid(solvingNode.InsertIntoFlatTextGrid(lowestEntropyCell, number));
+
+                // 4] if a Sudoku is a WINNER break ◄◄◄◄◄◄◄◄◄◄
+                if (childGrid.IsWin())
+                {
+                    Debug.Log(childGrid.ToPrettyTab());
+                    return;
+                }
+                // 5] else for each VALID Sudoku, build the corresponding node, link to parent (current) node
+                else if (childGrid.IsValid())
+                {
+                    SolvingNode childSolvingNode = new SolvingNode(solvingNode, maxRecurseSteps);
+                    childSolvingNode.SetGrid(childGrid.ToString());
+
+                    // 6] relaunch the function on each of these VALID node/grid
+                    RecursiveSolveSudokuNode(childSolvingNode);
+                }
+
+                // INVALID, DO NOTHING
+            }
+
+            // 7] mark CELL as parsed, restart loop @1 (continue to next lowest entropy child)
+            lowestEntropyCell.alreadyParsedBySolver = true;
+
+        } while (lowestEntropyCell != null); // sanity check ...
 
     }
-
-
 
 
     private static SolvingNode TrySolveCurrentNode(SolvingNode currentSolvingNode)
@@ -306,11 +343,14 @@ public class SudokuSolver : MonoBehaviour
     public void Fill()
     {
         Text2Sudoku("-8--------6---53------9-56-------8-2-------4-3-7-2------5-6-98-7--4----3-4---1---");
-
-        // TESTS -------------------------------------------
         string su = PrettyDisplaySudoku(Sudoku2Text());
         Debug.Log(su);
-        LogFile.WriteString(su);
+
+        // REAL SUDOKU ============================================================================
+        SudokuGrid grid = new SudokuGrid();
+        grid.SetFromString("-8--------6---53------9-56-------8-2-------4-3-7-2------5-6-98-7--4----3-4---1---");
+        Debug.Log(grid.ToPrettyTab(true));
+        LogFile.WriteString(grid.ToPrettyTab(true));
     }
 
     public void old_Fill()

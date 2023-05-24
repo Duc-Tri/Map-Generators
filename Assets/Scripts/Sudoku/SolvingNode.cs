@@ -7,30 +7,27 @@ using UnityEditor.Experimental.GraphView;
 public class SolvingNode
 {
     private enum NodeStates : byte { NONE, INVALID, ONGOING, VALID }
-
-    public SudokuCellUI cell;
-    public int IndexNodeSolution;
     private NodeStates nodeState;
+    public bool IsNotInvalid => nodeState != NodeStates.INVALID;
+
+    public int IndexNodeSolution;
 
     public SolvingNode parentNode;
     List<SolvingNode> children;
 
-    private string currentGrid;
-
-    public bool IsNotInvalid => nodeState != NodeStates.INVALID;
+    public string flatTextGrid; // WE KEEP THE SUDOKU IN STRING FORM !!!
 
     public SolvingNode()
     {
         nodeState = NodeStates.NONE;
     }
-    public SolvingNode(SolvingNode parent, SudokuCellUI c, int i)
+    public SolvingNode(SolvingNode parent, int i) : base()
     {
-        cell = c;
         IndexNodeSolution = i;
         parentNode = parent;
     }
 
-    internal string FillChildrenWithSolutions(SudokuCellUI[,] allCellsGrid)
+    public string FillChildrenWithSolutions(SudokuCellUI[,] allCellsGrid)
     {
         //if (children != null && children.Count > 0) return "ALREADY FILLED"; // ALREADY FILLED
 
@@ -39,11 +36,14 @@ public class SolvingNode
         for (int l = 0; l < 9; l++)
             for (int c = 0; c < 9; c++)
             {
-                SudokuCellUI cell = allCellsGrid[l, c];
+                /*
+                SudokuCell cell = allCellsGrid[l, c];
                 if (!cell.SolutionSet)
                     for (int n = 0; n < 9; n++)
-                        if (cell.numberAuthorized[n])
+                        if (cell.possibilities[n])
                             children.Add(new SolvingNode(this, cell, n));
+                */
+                //////////////////////////////////////////////////////////////////////////////// Î
             }
 
         string s = "";
@@ -52,7 +52,7 @@ public class SolvingNode
         return s;
     }
 
-    internal SolvingNode SetSolutionFromLowestEntropyChild()
+    public SolvingNode SetSolutionFromLowestEntropyChild()
     {
         nodeState = NodeStates.ONGOING;
 
@@ -64,17 +64,20 @@ public class SolvingNode
             // search for minimum entropy =================================
             minEntropyNode = null;
             foreach (var node in children)
+                /*
                 if (node.IsNotInvalid && node.cell.Entropy < minEntropy)
                 {
                     minEntropyNode = node;
                     minEntropy = node.cell.Entropy;
                 }
+                */
 
-            if (minEntropyNode == null) break; // NO SOLUTION
+                if (minEntropyNode == null) break; // NO SOLUTION
 
             // try the solution ===========================================
             bool trySetASolution = false;
-            trySetASolution = minEntropyNode.cell.TrySetASolution(minEntropyNode.IndexNodeSolution + 1);
+            ////////////trySetASolution = minEntropyNode.cell.TrySetASolution(minEntropyNode.IndexNodeSolution + 1);
+            ///
             if (!trySetASolution)
             {
                 minEntropyNode.SetInvalid();
@@ -96,12 +99,15 @@ public class SolvingNode
         children = null;
     }
 
+    /*
     public override String ToString()
     {
-        return cell.IndexCell + "►" + IndexNodeSolution + " ";
+        /////////////return cell.IndexCell + "►" + IndexNodeSolution + " ";
     }
+    */
 
-    internal void Reset()
+    /*
+    public void Reset()
     {
         cell = null;
         IndexNodeSolution = -1;
@@ -109,10 +115,16 @@ public class SolvingNode
 
         if (children != null) children.Clear();
     }
+    */
 
-    internal void SetGrid(string s)
+    public void SetGrid(string s)
     {
-        currentGrid = s;
+        flatTextGrid = s;
+    }
+
+    internal string InsertIntoFlatTextGrid(SudokuCell lowestEntropyCell, int number)
+    {
+        throw new NotImplementedException();
     }
 }
 

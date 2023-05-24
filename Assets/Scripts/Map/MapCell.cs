@@ -8,6 +8,6 @@ namespace MapGenerator
 
         public Color color;
 
-        internal float noiseValue;
+        public float noiseValue;
     }
 }
