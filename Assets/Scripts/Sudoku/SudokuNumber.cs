@@ -7,14 +7,14 @@ using UnityEngine.EventSystems;
 public class SudokuNumber : MonoBehaviour, IPointerClickHandler
 {
     TextMeshProUGUI TMPtext;
-    SudokuCell parentCell;
+    SudokuCellUI parentCell;
     int number;
 
     private void Start()
     {
         TMPtext = GetComponent<TextMeshProUGUI>();
         int.TryParse(TMPtext.text, out number);
-        parentCell = transform.parent.GetComponent<SudokuCell>();
+        parentCell = transform.parent.GetComponent<SudokuCellUI>();
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -26,7 +26,7 @@ public class SudokuNumber : MonoBehaviour, IPointerClickHandler
                 "_PB" + parentCell.IndexBox +
                 " === " + TMPtext.text);
 
-            parentCell.SetASolution(number);
+            parentCell.TrySetASolution(number);
         }
     }
 

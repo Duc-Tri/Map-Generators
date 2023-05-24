@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 // One of the 9*9 cells on the Sudoku
-public partial class SudokuCell : MonoBehaviour
+public partial class SudokuCellUI : MonoBehaviour
 {
     private static Color[] colors = new Color[] { Color.grey, Color.green, Color.blue, Color.red, Color.white, Color.magenta, Color.black, Color.yellow, Color.cyan };
 
@@ -70,7 +70,7 @@ public partial class SudokuCell : MonoBehaviour
         ///////////DebugCell();
     }
 
-    private const float TRANS_STEP = 1f / (1 + 9 * 3); // 1f / 10f;
+    private const float TRANS_STEP = 1f / (1 + 9 * 40f); // 1f / 10f;
     private void Start()
     {
         if (container == null) container = this.GetComponent<RectTransform>();
@@ -84,17 +84,17 @@ public partial class SudokuCell : MonoBehaviour
             numberAuthorized[i] = true;
             TMPnumbers[i].name = TMPnumbers[i].text = (i + 1).ToString();
 
-            Debug.Log("AddComponent_" + i);
+            //Debug.Log("AddComponent_" + i);
         }
         originalFontSize = TMPnumbers[0].fontSize;
 
         // colors ------------------------------------------
         Color color = colors[colors.Length - IndexLine - 1];
-        color.a = TRANS_STEP * (IndexColumn + 1) * 3;
+        color.a = TRANS_STEP * (IndexColumn + 1) * 13;
         this.GetComponent<Image>().color = color;
 
         foreach (var t in TMPnumbers)
-            t.color = colors[IndexBox];
+            t.color = (IndexBox % 2) == 0 ? Color.black : Color.white;   //colors[IndexBox];
     }
 
     public void DebugCell()
@@ -109,30 +109,45 @@ public partial class SudokuCell : MonoBehaviour
     }
 
     // solutionNumber = 1..9
-    internal void SetASolution(int solutionNumber)
+    internal bool TrySetASolution(int solutionNumber)
     {
-        Debug.Log("SudokuCell::SetASolution_C" + IndexCell + "_X" + IndexColumn + "_Y" + IndexLine + "_B" + IndexBox + " >>> " + solutionNumber);
+        Debug.Log("SudokuCell::TrySetASolution_C" + IndexCell + "_X" + IndexColumn + "_Y" + IndexLine + "_B" + IndexBox + " >>> " + solutionNumber);
         Debug.Assert(solutionNumber >= 1 && solutionNumber <= 9);
 
         // already marked, stop here !
-        if (SolutionSet) return;
+        if (SolutionSet) return false;
 
-        int index = solutionNumber - 1;
+        int index = solutionNumber - 1; // -1 because in real Sudoku, we have 1..9, but the array index is 0..8
+
         if (!numberAuthorized[index])
         {
-            Debug.LogWarning(IndexCell + " ► SetASolution IMPOSSIBLE TO SET ########## " + solutionNumber);
-            return;
+            Debug.LogWarning(IndexCell + " ► TrySetASolution IMPOSSIBLE TO SET ########## " + solutionNumber);
+
+            //if (SudokuSolver.IsInSolvingMode) SudokuSolver.InvalidCurrentNode();
+
+            return false;
+        }
+
+        if (!SudokuSolver.CheckFutureSolutionConstraints(this, solutionNumber))
+        {
+            Debug.LogWarning(IndexCell + " ► TrySetASolution DONT RESPECT CONSTRAINT ########## " + solutionNumber);
+
+            //if (SudokuSolver.IsInSolvingMode) SudokuSolver.InvalidCurrentNode();
+
+            return false;
         }
 
         SolutionSet = true;
 
         // set all numbers NOT authorized except the parameter
         for (int i = 0; i < 9; i++)
-            numberAuthorized[i] = (i == index); // -1 because in real Sudoku, we have 1..9, but the array index is 0..8
+            numberAuthorized[i] = (i == index);
 
         UpdateUI();
 
         RecordAndPropagateSolution(index);
+
+        return true;
     }
 
     private void RecordAndPropagateSolution(int index)
@@ -144,17 +159,25 @@ public partial class SudokuCell : MonoBehaviour
     // A CONSTRAINT = A NUMBER YOU CANNOT USE ANYMORE
     internal void AddConstraint(int number)
     {
-        // already marked, stop here !
+        // ALREADY MARKED, STOP HERE ! ----------------------------------------
         if (SolutionSet) return;
 
         int index = number - 1;
 
-        Debug.LogWarning(IndexCell + " ► SudokuCell::AddConstraint_N" + number + "_I" + index);
+        Debug.Log(IndexCell + " ► SudokuCell::AddConstraint_N" + number + "_I" + index);
+
+        // IMPOSSIBLE TO SET THIS CONSTRAINT ----------------------------------
+        if (!numberAuthorized[index])
+        {
+            Debug.LogWarning(IndexCell + " ► IMPOSSIBLE TO SATISFY THIS CONSTRAINT !!!");
+            return;
+        }
 
         numberAuthorized[index] = false;
 
         TMPnumbers[index].gameObject.SetActive(false);
 
+        // CHECK IF ONLY ONE POSSIBILITY REMAINS => WE HAVE A SOLUTION --------
         int indexUniqueSolution = -1;
         for (int i = 0; i < 9; i++)
             if (numberAuthorized[i])
@@ -162,18 +185,18 @@ public partial class SudokuCell : MonoBehaviour
                 if (indexUniqueSolution < 0)
                     indexUniqueSolution = i;
                 else
-                    return; // more than 1 connstraints remaining ...
+                    return; // more than 1 connstraints remaining, we finished our work, back to normal flow ...
             }
 
-        // sanity check ...
+        // IF ZERO POSSIBILITY REMAINS => ERROR, IF ONLY ONE => SOLUTION ------
         if (indexUniqueSolution == -1)
         {
-            Debug.LogError("NO NUMBER SATISFIES CONSTRAINTS !!!!!!!!!!! " + IndexCell);
+            Debug.LogError(IndexCell + " ► ZERO POSSIBILITY REMAINS !!!");
             return;
         }
 
         // only one number remaining => it's a solution !
-        SetASolution(indexUniqueSolution + 1);
+        TrySetASolution(indexUniqueSolution + 1);
     }
 
     internal void Reset()
@@ -191,14 +214,17 @@ public partial class SudokuCell : MonoBehaviour
         {
             var t = TMPnumbers[n];
             t.gameObject.SetActive(numberAuthorized[n]);
-            t.fontSize = originalFontSize;
-            t.fontStyle = TMPro.FontStyles.Normal;
+            if (numberAuthorized[n])
+            {
+                t.fontSize = originalFontSize;
+                t.fontStyle = TMPro.FontStyles.Bold;
+            }
         }
 
         if (SolutionSet)
         {
-            Debug.LogWarning(IndexCell + " ► UpdateUI ============= " + Solution);
-            TMPnumbers[Solution - 1].fontStyle = TMPro.FontStyles.Bold;
+            //Debug.Log(IndexCell + " ► UpdateUI ============= " + Solution);
+            TMPnumbers[Solution - 1].fontStyle = TMPro.FontStyles.Normal;
             TMPnumbers[Solution - 1].fontSize = 140;
         }
     }

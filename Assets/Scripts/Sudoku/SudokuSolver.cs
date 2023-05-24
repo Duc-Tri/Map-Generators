@@ -1,10 +1,13 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR;
+using static System.Net.Mime.MediaTypeNames;
 
 public class SudokuSolver : MonoBehaviour
 {
@@ -12,24 +15,27 @@ public class SudokuSolver : MonoBehaviour
     private static GameStates gameState;
 
     [SerializeField]
-    private SudokuCell original;
+    private SudokuCellUI original;
 
-    public static SudokuCell[,] AllCellsGrid = new SudokuCell[9, 9];
-    public static SudokuCell[,] AllCellsBox = new SudokuCell[9, 9];
+    public static SudokuCellUI[,] AllCellsGrid = new SudokuCellUI[9, 9];
+    public static SudokuCellUI[,] AllCellsBox = new SudokuCellUI[9, 9];
 
     private static int CurrentGameStep = 999; // for backtracking / cancelling
-    private static Tuple<SudokuCell, int>[] SudokuStates = new Tuple<SudokuCell, int>[9 * 9];
+    private static Tuple<SudokuCellUI, int>[] SudokuStates = new Tuple<SudokuCellUI, int>[9 * 9];
 
     public static bool IsInGameMode => gameState == GameStates.INGAME;
+    public static bool IsInSolvingMode => gameState == GameStates.SOLVING;
 
     void Start()
     {
+        LogFile.InitLogFile();
+
         gameState = GameStates.NONE;
         CurrentGameStep = 0;
 
         for (int i = 0; i < 9 * 9; i++) // 9 * 9
         {
-            SudokuCell cell = Instantiate(original, this.transform);
+            SudokuCellUI cell = Instantiate(original, this.transform);
             cell.SetCoordinates(i);
         }
 
@@ -38,7 +44,46 @@ public class SudokuSolver : MonoBehaviour
         gameState = GameStates.INGAME;
     }
 
-    public static void PropagateConstraints(SudokuCell cell)
+
+    public static bool CheckFutureSolutionConstraints(SudokuCellUI cell, int solutionNumber)
+    {
+        // check in line
+        for (int l = 0; l < 9; l++)
+        {
+            if (l != cell.IndexLine)
+            {
+                SudokuCellUI c2 = AllCellsGrid[cell.IndexColumn, l];
+                if (c2.SolutionSet && c2.Solution == solutionNumber)
+                    return false;
+            }
+        }
+
+        // check in column
+        for (int c = 0; c < 9; c++)
+        {
+            if (c != cell.IndexColumn)
+            {
+                SudokuCellUI c2 = AllCellsGrid[c, cell.IndexLine];
+                if (c2.SolutionSet && c2.Solution == solutionNumber)
+                    return false;
+            }
+        }
+
+        // check in box
+        for (int i = 0; i < 9; i++)
+        {
+            if (i != cell.IndexInsideBox)
+            {
+                SudokuCellUI c2 = AllCellsBox[cell.IndexBox, i];
+                if (c2.SolutionSet && c2.Solution == solutionNumber)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static void PropagateConstraints(SudokuCellUI cell)
     {
         if (!cell.SolutionSet) return; // no solution for this cell yet...
 
@@ -65,12 +110,14 @@ public class SudokuSolver : MonoBehaviour
     {
         if (resetSteps) CurrentGameStep = 0;
 
+        //currentSolvingNode = null;
+
         for (int l = 0; l < 9; l++)
             for (int c = 0; c < 9; c++)
                 AllCellsGrid[c, l].Reset();
     }
 
-    public void BackOneStep()
+    public static void BackOneStep()
     {
         // WORKING BUT NOT OPTIMIZED !!!
 
@@ -79,7 +126,7 @@ public class SudokuSolver : MonoBehaviour
         ReplaySudokuMoves();
     }
 
-    private void ReplaySudokuMoves()
+    private static void ReplaySudokuMoves()
     {
         gameState = GameStates.REPLAYING;
 
@@ -88,18 +135,18 @@ public class SudokuSolver : MonoBehaviour
         for (int step = 0; step < CurrentGameStep; step++)
         {
             // ask the Cell to set a solution, and its will call back Solver to propagate the constraints
-            SudokuStates[step].Item1.SetASolution(SudokuStates[step].Item2);
+            SudokuStates[step].Item1.TrySetASolution(SudokuStates[step].Item2);
         }
 
         gameState = GameStates.INGAME;
     }
 
-    internal static void RecordSolutionStep(SudokuCell sudokuCell)
+    internal static void RecordSolutionStep(SudokuCellUI sudokuCell)
     {
         if (gameState != GameStates.REPLAYING && gameState != GameStates.WON)
         {
             Debug.Log("SudokuSolver::RecordSolutionStep >>>>> " + sudokuCell.IndexCell + " SOL:" + sudokuCell.Solution);
-            SudokuStates[CurrentGameStep++] = new Tuple<SudokuCell, int>(sudokuCell, sudokuCell.Solution);
+            SudokuStates[CurrentGameStep++] = new Tuple<SudokuCellUI, int>(sudokuCell, sudokuCell.Solution);
 
             if (IsGameWon())
                 gameState = GameStates.WON;
@@ -108,67 +155,200 @@ public class SudokuSolver : MonoBehaviour
 
     private static bool IsGameWon()
     {
-        int solutions = 9 * 9;
+        int count = 9 * 9;
         for (int l = 0; l < 9; l++)
             for (int c = 0; c < 9; c++)
                 if (AllCellsGrid[c, l].SolutionSet)
-                    solutions--;
+                    count--;
 
-        return (solutions == 0);
+        return (count == 0);
     }
 
-    static SolutionNode firstNode = new SolutionNode();
-    public void Solve()
+    public void SolveOneStep()
     {
         if (gameState == GameStates.REPLAYING || gameState == GameStates.WON) return;
+        /*
+        if (currentSolvingNode == null) currentSolvingNode = new SolvingNode();
+        //        currentSolvingNode.Reset();
 
-        firstNode.Reset();
-        maxSteps = 9 * 9;
-        RecursiveSolve();
+        TrySolveCurrentNode();
+        */
     }
 
-    static int maxSteps = 0;
-    private static void RecursiveSolve()
+    public void SolveAll()
     {
-        if (IsGameWon() || --maxSteps == 0) return; // STOP RECURSION
+        if (IsGameWon()) return;
 
-        firstNode.FillWithSolutions(AllCellsGrid);
-        firstNode = firstNode.TestLowestEntropyChild();
-        RecursiveSolve();
+        gameState = GameStates.SOLVING;
+
+        // THE FIRST NODE, WE SUPPOSE THE CURRENT GRID IS VALID
+        SolvingNode currentSolvingNode = new SolvingNode();
+        currentSolvingNode.SetGrid(Sudoku2Text());
+
+        maxRecurseSteps = 0; // sanity check
+
+        /*
+
+        while (true)
+        {
+            currentSolvingNode = TrySolveCurrentNode(currentSolvingNode);
+
+            if (IsGameWon() || --maxSteps == 0 || currentSolvingNode == null) break;  // STOP LOOP
+        }
+        */
+        //////////////////////////////////////Recursive 
+    }
+
+    static int maxRecurseSteps = 0; // sanity check
+    private static void RecursiveSolveSudokuNode(SolvingNode currentSolvingNode)
+    {
+        if (currentSolvingNode == null || IsGameWon() || ++maxRecurseSteps > 2000000) return;  // STOP RECURSION
+
+        // 1] seek for lowest entropy in children
+        // 2] if not found, this node is INVALID, return
+
+        // 3] relaunch the function by setting ALL available NUMBERS in that found node
+        // 5] if game not WON, mark this node as INVALID
+        // 6] restart loop @1 (continue to next lowest entropy child)
+
+    }
+
+
+
+
+    private static SolvingNode TrySolveCurrentNode(SolvingNode currentSolvingNode)
+    {
+        LogFile.WriteString(PrettyDisplaySudoku(Sudoku2Text()));
+
+        currentSolvingNode.FillChildrenWithSolutions(AllCellsGrid);
+
+        SolvingNode lowestEntropyChild = currentSolvingNode.SetSolutionFromLowestEntropyChild();
+
+        if (lowestEntropyChild == null) // FAIL ....................
+        {
+            currentSolvingNode.SetInvalid(); // MARK AS INVALID
+            currentSolvingNode = currentSolvingNode.parentNode; // BACKTRACKING
+
+            // NO !!!!!!!!!!! USE ANOTHER WAY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // USE STACK ????????????????
+            // RESTORE PREVIOUS STATE (inside node ????????????)
+            //////////////////////BackOneStep();
+
+            gameState = GameStates.SOLVING;
+        }
+        else // OK .................................................
+        {
+            currentSolvingNode = lowestEntropyChild; // CONTINUE
+        }
+
+        return currentSolvingNode;
+    }
+
+    public static string Sudoku2Text()
+    {
+        StringBuilder sb = new StringBuilder();
+        // check in line
+        for (int l = 0; l < 9; l++)
+            for (int c = 0; c < 9; c++)
+            {
+                SudokuCellUI cell = AllCellsGrid[c, l];
+                sb.Append(cell.SolutionSet ? cell.Solution : "-"); // DONT USE <'>
+            }
+
+        Debug.Log(sb.Length + " ► Sudoku2Text === " + sb.ToString());
+        return sb.ToString();
+    }
+
+    public static void Text2Sudoku(string text)
+    {
+        char[] sudoku = text.ToCharArray();
+        Debug.Log(sudoku.Length + " ► Text2Sudoku === " + string.Join("", sudoku));
+        ResetAllCells(true);
+
+        for (int l = 0; l < 9; l++)
+            for (int c = 0; c < 9; c++)
+            {
+                int number;
+                if (int.TryParse(sudoku[l * 9 + c].ToString(), out number))
+                    AllCellsGrid[c, l].TrySetASolution(number);
+            }
+    }
+
+    public static string PrettyDisplaySudoku(string text)
+    {
+        // 179 │ 180 ┤ 191 ┐ 192 └ 193 ┴ 194 ┬ 195 ├ 196 ─ 197 ┼   217 ┘ 218 ┌ 
+
+        char[] sudoku = text.ToCharArray();
+        StringBuilder sb = new StringBuilder();
+
+        sb.Append("┌───┬───┬───┐\n");
+        for (int l = 0; l < 9; l++)
+        {
+            for (int c = 0; c < 9; c++)
+            {
+                if (c % 3 == 0) sb.Append("│");
+
+                int number;
+                if (int.TryParse(sudoku[l * 9 + c].ToString(), out number))
+                    sb.Append(number);
+                else
+                    sb.Append("·");
+            }
+            sb.Append("│\n");
+
+            if (l < 8 && l % 3 == 2) sb.Append("├───┼───┼───┤\n");
+        }
+        sb.Append("└───┴───┴───┘");
+
+        return sb.ToString();
     }
 
     public void Fill()
     {
-        AllCellsGrid[1, 0].SetASolution(8);
+        Text2Sudoku("-8--------6---53------9-56-------8-2-------4-3-7-2------5-6-98-7--4----3-4---1---");
 
-        AllCellsGrid[1, 1].SetASolution(6);
-        AllCellsGrid[5, 1].SetASolution(5);
-        AllCellsGrid[6, 1].SetASolution(3);
+        // TESTS -------------------------------------------
+        string su = PrettyDisplaySudoku(Sudoku2Text());
+        Debug.Log(su);
+        LogFile.WriteString(su);
+    }
 
-        AllCellsGrid[4, 2].SetASolution(9);
-        AllCellsGrid[6, 2].SetASolution(5);
-        AllCellsGrid[7, 2].SetASolution(6);
+    public void old_Fill()
+    {
+        /*
+        ResetAllCells(true);
 
-        AllCellsGrid[6, 3].SetASolution(8);
-        AllCellsGrid[8, 3].SetASolution(2);
+        AllCellsGrid[1, 0].TrySetASolution(8);
 
-        AllCellsGrid[7, 4].SetASolution(4);
+        AllCellsGrid[1, 1].TrySetASolution(6);
+        AllCellsGrid[5, 1].TrySetASolution(5);
+        AllCellsGrid[6, 1].TrySetASolution(3);
 
-        AllCellsGrid[0, 5].SetASolution(3);
-        AllCellsGrid[2, 5].SetASolution(7);
-        AllCellsGrid[4, 5].SetASolution(2);
+        AllCellsGrid[4, 2].TrySetASolution(9);
+        AllCellsGrid[6, 2].TrySetASolution(5);
+        AllCellsGrid[7, 2].TrySetASolution(6);
 
-        AllCellsGrid[2, 6].SetASolution(5);
-        AllCellsGrid[4, 6].SetASolution(6);
-        AllCellsGrid[6, 6].SetASolution(9);
-        AllCellsGrid[7, 6].SetASolution(8);
+        AllCellsGrid[6, 3].TrySetASolution(8);
+        AllCellsGrid[8, 3].TrySetASolution(2);
 
-        AllCellsGrid[0, 7].SetASolution(7);
-        AllCellsGrid[3, 7].SetASolution(4);
-        AllCellsGrid[8, 7].SetASolution(3);
+        AllCellsGrid[7, 4].TrySetASolution(4);
 
-        AllCellsGrid[1, 8].SetASolution(4);
-        AllCellsGrid[5, 8].SetASolution(1);
+        AllCellsGrid[0, 5].TrySetASolution(3);
+        AllCellsGrid[2, 5].TrySetASolution(7);
+        AllCellsGrid[4, 5].TrySetASolution(2);
+
+        AllCellsGrid[2, 6].TrySetASolution(5);
+        AllCellsGrid[4, 6].TrySetASolution(6);
+        AllCellsGrid[6, 6].TrySetASolution(9);
+        AllCellsGrid[7, 6].TrySetASolution(8);
+
+        AllCellsGrid[0, 7].TrySetASolution(7);
+        AllCellsGrid[3, 7].TrySetASolution(4);
+        AllCellsGrid[8, 7].TrySetASolution(3);
+
+        AllCellsGrid[1, 8].TrySetASolution(4);
+        AllCellsGrid[5, 8].TrySetASolution(1);
+        */
     }
 
 }
