@@ -4,22 +4,22 @@ using UnityEngine.EventSystems;
 
 
 // One of the 9 numbers of the 81 Sudoku cells
-public class SudokuNumber : MonoBehaviour, IPointerClickHandler
+public class GUISudokuTMPNumber : MonoBehaviour, IPointerClickHandler
 {
     TextMeshProUGUI TMPtext;
-    SudokuCellUI parentCell;
+    GUISudokuCell parentCell;
     int number;
 
     private void Start()
     {
         TMPtext = GetComponent<TextMeshProUGUI>();
         int.TryParse(TMPtext.text, out number);
-        parentCell = transform.parent.GetComponent<SudokuCellUI>();
+        parentCell = transform.parent.GetComponent<GUISudokuCell>();
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (SudokuSolver.IsInGameMode)
+        if (GUISudoku.IsInGameMode)
         {
             Debug.Log("SudokuNumber::OnPointerClick PL" + parentCell.IndexLine +
                 "_PC" + parentCell.IndexColumn +

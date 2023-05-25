@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 // One of the 9*9 cells on the Sudoku
-public class SudokuCellUI : MonoBehaviour
+public class GUISudokuCell : MonoBehaviour
 {
     private static Color[] colors = new Color[] { Color.grey, Color.green, Color.blue, Color.red, Color.white, Color.magenta, Color.black, Color.yellow, Color.cyan };
 
@@ -62,8 +62,8 @@ public class SudokuCellUI : MonoBehaviour
         IndexBox = ((i / 3) % 3 + (i / 27) * 3);
         IndexInsideBox = ((i % 3) + ((i / 9) % 3) * 3);
 
-        SudokuSolver.AllCellsGrid[IndexColumn, IndexLine] = this;
-        SudokuSolver.AllCellsBox[IndexBox, IndexInsideBox] = this;
+        GUISudoku.AllCellsGrid[IndexColumn, IndexLine] = this;
+        GUISudoku.AllCellsBox[IndexBox, IndexInsideBox] = this;
 
         this.name = "BOX_" + IndexBox + "_CELL_" + IndexCell;
 
@@ -111,7 +111,8 @@ public class SudokuCellUI : MonoBehaviour
     // solutionNumber = 1..9
     public bool TrySetASolution(int solutionNumber)
     {
-        Debug.Log("SudokuCell::TrySetASolution_C" + IndexCell + "_X" + IndexColumn + "_Y" + IndexLine + "_B" + IndexBox + " >>> " + solutionNumber);
+        ///Debug.Log("SudokuCell::TrySetASolution_C" + IndexCell + "_X" + IndexColumn + "_Y" + IndexLine + "_B" + IndexBox + " >>> " + solutionNumber);
+        
         Debug.Assert(solutionNumber >= 1 && solutionNumber <= 9);
 
         // already marked, stop here !
@@ -128,7 +129,7 @@ public class SudokuCellUI : MonoBehaviour
             return false;
         }
 
-        if (!SudokuSolver.CheckFutureSolutionConstraints(this, solutionNumber))
+        if (!GUISudoku.CheckFutureSolutionConstraints(this, solutionNumber))
         {
             Debug.LogWarning(IndexCell + " ► TrySetASolution DONT RESPECT CONSTRAINT ########## " + solutionNumber);
 
@@ -152,8 +153,8 @@ public class SudokuCellUI : MonoBehaviour
 
     private void RecordAndPropagateSolution(int index)
     {
-        SudokuSolver.RecordSolutionStep(this);
-        SudokuSolver.PropagateConstraints(this);
+        GUISudoku.RecordSolutionStep(this);
+        GUISudoku.PropagateConstraints(this);
     }
 
     // A CONSTRAINT = A NUMBER YOU CANNOT USE ANYMORE
@@ -164,12 +165,13 @@ public class SudokuCellUI : MonoBehaviour
 
         int index = number - 1;
 
-        Debug.Log(IndexCell + " ► SudokuCell::AddConstraint_N" + number + "_I" + index);
+        //Debug.Log(IndexCell + " ► SudokuCell::AddConstraint_N" + number + "_I" + index);
 
         // IMPOSSIBLE TO SET THIS CONSTRAINT ----------------------------------
         if (!possibilities[index])
         {
-            Debug.LogWarning(IndexCell + " ► IMPOSSIBLE TO SATISFY THIS CONSTRAINT !!!");
+            // HAPPENS FREQUENTLY, WHEN WE ALREADY CONSTRAINT THIS IN PREVIOUS LINE, COLUMN OR BOX
+            //Debug.LogWarning(IndexCell + " ► IMPOSSIBLE TO SATISFY THIS CONSTRAINT !!! " + number);
             return;
         }
 

@@ -1,25 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 // One of the 9*9 cells on the Sudoku
-public class SudokuCell
+public class OldSudokuCell
 {
-    private SudokuGrid sudokuGrid; // the parent grid
+    private OldSudokuGrid sudokuGrid; // the parent grid
 
     private bool[] possibilities = new bool[9]; // add +1 to index to have numbers
     internal bool alreadyParsedBySolver;
-
-    public bool hasOnlyOneSolution
-    {
-        get
-        {
-            return entropy == 1;
-        }
-    }
 
     public int indexLine { get; private set; }
 
@@ -40,13 +33,13 @@ public class SudokuCell
                     if (possibilities[i])
                         return (i + 1);
 
-            return 0;
+            return 0; // ERROR !
         }
     }
 
     public int entropy
     {
-        // here, the entropy is just the numbers authorized remaining
+        // here, the entropy is just the possibilities count (authorized numbers)
         get
         {
             int entropy = 0;
@@ -56,7 +49,15 @@ public class SudokuCell
         }
     }
 
-    public SudokuCell(SudokuGrid container, int indexCell)
+    public bool hasOnlyOneSolution
+    {
+        get
+        {
+            return entropy == 1;
+        }
+    }
+
+    public OldSudokuCell(OldSudokuGrid container, int indexCell)
     {
         sudokuGrid = container;
 
@@ -77,7 +78,7 @@ public class SudokuCell
 
     public bool TrySetASolution(int solutionNumber)
     {
-        Debug.Log("SudokuCell::TrySetASolution" + this.ToString() + " ► " + solutionNumber);
+        //Debug.Log("SudokuCell::TrySetASolution" + this.ToString() + " ► " + solutionNumber);
 
         Debug.Assert(solutionNumber >= 1 && solutionNumber <= 9);
 
@@ -88,7 +89,7 @@ public class SudokuCell
 
         if (!possibilities[iPossibilities])
         {
-            Debug.LogWarning(indexCell + " ► TrySetASolution IMPOSSIBLE TO SET ########## " + solutionNumber);
+            ////Debug.LogWarning(indexCell + " ► TrySetASolution IMPOSSIBLE TO SET ########## " + solutionNumber);
             return false;
         }
 
@@ -126,7 +127,7 @@ public class SudokuCell
         // IMPOSSIBLE TO SET THIS CONSTRAINT ----------------------------------
         if (!possibilities[index])
         {
-            Debug.LogWarning(indexCell + " ► IMPOSSIBLE TO SATISFY THIS CONSTRAINT !!!");
+            //Debug.LogWarning(indexCell + " ► IMPOSSIBLE TO SATISFY THIS CONSTRAINT !!!");
             return;
         }
 
@@ -152,21 +153,39 @@ public class SudokuCell
     {
         if (hasOnlyOneSolution) return;
 
-        List<int> possibilities = new List<int>();
+        List<int> poss = new List<int>();
         for (int n = 0; n < 9; n++)
-            if (this.possibilities[n])
-                possibilities.Add(n);
+            if (possibilities[n])
+                poss.Add(n);
 
-        int randIndexToTest = possibilities[(int)(Random.value * possibilities.Count)];
+        int randIndexToTest = poss[(int)(Random.value * poss.Count)];
     }
 
-    public string ToString()
+    public override string ToString()
     {
-        return "C:" + indexCell + "_X:" + indexColumn + "_Y:" + indexLine + "_B:" + indexBox + "/" + indexInsideBox + " [" + string.Join("-", possibilities) + "]";
+        return "C:" + indexCell + "_X:" + indexColumn + "_Y:" + indexLine + "_B:" + indexBox + "/" + indexInsideBox + " [" + string.Join("-", GetPossibilitiesInNumbersList()) + "]";
     }
 
     internal List<int> GetPossibilitiesInNumbersList()
     {
-        throw new NotImplementedException();
+        List<int> numbers = new List<int>();
+        for (int n = 0; n < 9; n++)
+            if (possibilities[n]) numbers.Add(n + 1);
+
+        return numbers;
+    }
+
+    internal void ForceSet(int number)
+    {
+        int iPossibilities = number - 1; // -1 because in real Sudoku, we have 1..9, but the array index is 0..8
+        for (int i = 0; i < 9; i++)
+            possibilities[i] = (i == iPossibilities);
+    }
+
+    internal void SetContraints(List<int> constraints)
+    {
+        //Debug.Log(indexCell + " ► SetContraints " + String.Join("*", constraints));
+
+        for (int i = 0; i < 9; i++) possibilities[i] = !constraints.Contains(i + 1);
     }
 }

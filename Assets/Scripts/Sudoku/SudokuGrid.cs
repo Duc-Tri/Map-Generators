@@ -1,195 +1,373 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using static UnityEngine.UI.Image;
 
 public class SudokuGrid
 {
-    private SudokuCell[,] AllCellsGrid = new SudokuCell[9, 9];
-    private SudokuCell[,] AllCellsBox = new SudokuCell[9, 9];
+    private int[] grid = new int[9 * 9];
+    private List<SudokuNode> nodes;
+    private readonly int[,] BoxLookupTab;
+
+    int indexBox(int i) => ((i / 3) % 3 + (i / 27) * 3);
+    int indexInsideBox(int i) => (i % 3 + ((i / 9) % 3) * 3);
+
+    //■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
 
     public SudokuGrid()
     {
-        for (int i = 0; i < 9 * 9; i++) // 9 * 9
+        // lookup tab to facilitates futures algorithms
+        if (BoxLookupTab == null)
         {
-            SudokuCell cell = new SudokuCell(this, i);
-
-            Debug.Assert(cell != null);
-
-            Debug.Assert(cell.indexColumn >= 0 && cell.indexColumn <= 8);
-
-            Debug.Assert(cell.indexLine >= 0 && cell.indexLine <= 8);
-
-            Debug.Assert(cell.indexBox >= 0 && cell.indexBox <= 8);
-
-            Debug.Assert(cell.indexInsideBox >= 0 && cell.indexInsideBox <= 8);
-
-            AllCellsGrid[cell.indexColumn, cell.indexLine] = cell;
-            AllCellsBox[cell.indexBox, cell.indexInsideBox] = cell;
-
-            Debug.Log("############################################### C:" + cell.indexColumn + " L:" + cell.indexLine);
+            BoxLookupTab = new int[9, 9];
+            for (int index = 0; index < 9 * 9; index++)
+                BoxLookupTab[indexBox(index), indexInsideBox(index)] = index;
         }
     }
 
     public SudokuGrid(string flatGrid) : this()
     {
-        SetFromString(flatGrid, false);
+        SetFromString(flatGrid);
     }
 
-    public void PropagateSolutionConstraintsToOthersCells(SudokuCell cell)
+    public void SetFromString(string text)
     {
-        if (!cell.hasOnlyOneSolution) return; // we dont propagate cell without unique solution
+        char[] sudoku = text.ToCharArray();
+        Debug.Assert(sudoku.Length == 81);
 
-        for (int l = 0; l < 9; l++)
+        for (int i = 0; i < 81; i++)
         {
-            if (l != cell.indexLine)
-                AllCellsGrid[cell.indexColumn, l].AddConstraint(cell.solutionNumber);
+            int number;
+            if (int.TryParse(sudoku[i].ToString(), out number))
+            {
+                Debug.Assert(number >= 1 && number <= 9);
+
+                grid[i] = number;
+            }
+            else
+                grid[i] = 0;
+        }
+
+        Debug.Log(" ► SetFromString === " + string.Join(" ", sudoku) + " RES: " + this.ToString() + "\n" + this.ToPrettyTab());
+    }
+
+    // Remove v as possibility in nodes of same LINE, COLUMN or BOX (from gridIndex)
+    private void RemovePossibilitesToLineColumnBox(int gridIndex, int val)
+    {
+        int lineIndex = gridIndex / 9;
+        int columnIndex = gridIndex % 9;
+        int boxIndex = ((gridIndex / 3) % 3 + (gridIndex / 27) * 3);
+
+        grid[gridIndex] = val;
+
+        foreach (var node in nodes)
+        {
+            if (node.gridIndex != gridIndex && (node.lineIndex == lineIndex || node.columnIndex == columnIndex || node.boxIndex == boxIndex) &&
+                node.possibilities.Contains(val))
+            {
+                node.possibilities.Remove(val);
+
+                // ONLY ONE POSSIBILITY REMAINING ? IT'S A SOLUTION !!! -------
+                if (node.possibilities.Count == 1)
+                {
+                    int otherVal = node.possibilities[0];
+                    node.possibilities.Clear();
+                    RemovePossibilitesToLineColumnBox(node.gridIndex, otherVal);
+                }
+            }
+        }
+
+    }
+
+    // Construct (and constraint) possibilities for empty cell, create a node to wrap it
+    private void ConstructAllPossibilitiesNodes()
+    {
+        nodes = new List<SudokuNode>();
+
+        for (int index = 0; index < 81; index++)
+            if (grid[index] == 0)
+            {
+                List<int> possibilities = ContructNodePossibilities(index);
+
+                Debug.Assert(possibilities.Count > 0);
+
+                if (possibilities.Count > 1)
+                {
+                    SudokuNode node = new SudokuNode(index, possibilities);
+                    nodes.Add(node);
+                }
+                else // ONLY ONE POSSIBILITY = SOLUTION, PROPAGATE TO LINE, COLUMN, BOX
+                {
+                    grid[index] = possibilities[0];
+                    RemovePossibilitesToLineColumnBox(index, possibilities[0]);
+                }
+            }
+
+        // CLEAN NODES LIST FROM POSSIBILITIES ZERO ---------------------------
+        for (int i = nodes.Count - 1; i >= 0; i--)
+            if (nodes[i].possibilities.Count == 0)
+                nodes.RemoveAt(i);
+
+        // HERE, OPTIMIZED NODES, SORTING FOR ENTROPY -------------------------
+        nodes.Sort();
+
+        foreach (var node in nodes)
+            Debug.Log(node.gridIndex + " ■■■■■ [" + string.Join(", ", node.possibilities) + "]");
+    }
+
+    // Tell if the grid respect SUDOKU constraints (can consider 0 as valid or not)
+    public bool IsValid(bool zeroIsInvalid = false)
+    {
+        List<int> numbers = new List<int>();
+
+        for (int offset = 0; offset < 81; offset += 9)
+        {
+            numbers.Clear(); // reset before each new COLUMN
+            for (int c = 0; c < 9; c++)
+            {
+                int val = grid[offset + c];
+                if (val != 0) // 0 if no solution yet
+                {
+                    if (numbers.Contains(val)) return false;
+
+                    numbers.Add(val);
+                }
+                else
+                    if (zeroIsInvalid) return false;
+            }
         }
 
         for (int c = 0; c < 9; c++)
         {
-            if (c != cell.indexColumn)
-                AllCellsGrid[c, cell.indexLine].AddConstraint(cell.solutionNumber);
+            numbers.Clear(); // reset before each new LINE
+            for (int offset = 0; offset < 81; offset += 9)
+            {
+                int val = grid[offset + c];
+                if (val != 0) // 0 if no solution yet
+                {
+                    if (numbers.Contains(val)) return false;
+
+                    numbers.Add(val);
+                }
+                else
+                    if (zeroIsInvalid) return false;
+            }
         }
 
-        for (int i = 0; i < 9; i++)
+        for (int b = 0; b < 9; b++)
         {
-            if (i != cell.indexInsideBox)
-                AllCellsBox[cell.indexBox, i].AddConstraint(cell.solutionNumber);
+            numbers.Clear(); // reset before each new BOX
+            for (int i = 0; i < 9; i++)
+            {
+                int val = grid[BoxLookupTab[b, i]];
+
+                if (val != 0) // 0 if no solution yet
+                {
+                    if (numbers.Contains(val)) return false;
+                    numbers.Add(val);
+                }
+                else
+                    if (zeroIsInvalid) return false;
+            }
         }
-    }
 
-    public void RecordSolutionStep(SudokuCell sudokuCell)
-    {
-    }
-
-    public bool CheckASolutionNumber(SudokuCell cell, int solutionNumber)
-    {
-        // CHECK IN LINES =====================================================
-        for (int l = 0; l < 9; l++)
-            if (l != cell.indexLine)
-            {
-                SudokuCell c1 = AllCellsGrid[cell.indexColumn, l];
-                if (c1.hasOnlyOneSolution && c1.solutionNumber == solutionNumber)
-                    return false;
-            }
-
-        // CHECK IN COLUMNS ===================================================
-        for (int c = 0; c < 9; c++)
-            if (c != cell.indexColumn)
-            {
-                SudokuCell c1 = AllCellsGrid[c, cell.indexLine];
-                if (c1.hasOnlyOneSolution && c1.solutionNumber == solutionNumber)
-                    return false;
-            }
-
-        // CHECK IN BOXES =====================================================
-        for (int i = 0; i < 9; i++)
-            if (i != cell.indexInsideBox)
-            {
-                SudokuCell c1 = AllCellsBox[cell.indexBox, i];
-                if (c1.hasOnlyOneSolution && c1.solutionNumber == solutionNumber)
-                    return false;
-            }
-
+        // finally ...
         return true;
     }
 
-    public override string ToString()
+    // Give the possibilities of one cell, with the constraints of its LINE, COLUMN and BOX
+    private List<int> ContructNodePossibilities(int gridIndex)
     {
-        StringBuilder sb = new StringBuilder();
-        // check in line
-        for (int l = 0; l < 9; l++)
-            for (int c = 0; c < 9; c++)
-            {
-                SudokuCell cell = AllCellsGrid[c, l];
-                sb.Append(cell.hasOnlyOneSolution ? cell.solutionNumber : "-"); // DONT USE <'>
-            }
+        List<int> possibilities = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        int lineIndex = gridIndex / 9;
+        int columnIndex = gridIndex % 9;
+        int boxIndex = ((gridIndex / 3) % 3 + (gridIndex / 27) * 3);
+        int insideBoxIndex = (gridIndex % 3 + ((gridIndex / 9) % 3) * 3);
 
-        Debug.Log(sb.Length + " ► SudokuGrid === " + sb.ToString());
+        int offset = lineIndex * 9;
+        for (int c = 0; c < 9; c++)
+        {
+            if (offset + c == gridIndex) continue;
 
-        return sb.ToString();
+            int gridVal = grid[offset + c];
+
+            if (gridVal != 0 && possibilities.Contains(gridVal)) // 0 if no solution yet
+                possibilities.Remove(gridVal);
+        }
+
+        for (int lineOffset = 0; lineOffset < 81; lineOffset += 9)
+        {
+            if (lineOffset + columnIndex == gridIndex) continue;
+
+            int gridVal = grid[lineOffset + columnIndex];
+
+            if (gridVal != 0 && possibilities.Contains(gridVal)) // 0 if no solution yet
+                possibilities.Remove(gridVal);
+        }
+
+        for (int i = 0; i < 9; i++)
+        {
+            if (insideBoxIndex == i) continue;
+
+            int gridVal = grid[BoxLookupTab[boxIndex, i]];
+
+            if (gridVal != 0 && possibilities.Contains(gridVal)) // 0 if no solution yet
+                possibilities.Remove(gridVal);
+        }
+
+        return possibilities;
     }
 
-    public void SetFromString(string text, bool resetCells = true)
-    {
-        char[] sudoku = text.ToCharArray();
-
-        Debug.Log(sudoku.Length + " ► SetFromString === " + string.Join(" ", sudoku));
-
-        if (resetCells) ResetAllCells();
-
-        for (int l = 0; l < 9; l++)
-            for (int c = 0; c < 9; c++)
-            {
-                int number;
-                if (int.TryParse(sudoku[l * 9 + c].ToString(), out number))
-                {
-                    Debug.Assert(number >= 1 && number <= 9);
-
-                    Debug.Assert(AllCellsGrid[c, l] != null);
-
-                    AllCellsGrid[c, l].TrySetASolution(number);
-                }
-            }
-    }
-
-    public void ResetAllCells()
-    {
-        for (int l = 0; l < 9; l++)
-            for (int c = 0; c < 9; c++)
-                AllCellsGrid[c, l].Reset();
-    }
-
-    string[] entropyToString = { "█", "░", "A", "B", "C", "D", "E", "F", "G" };
     public string ToPrettyTab(bool withEntropyEncoded = false)
     {
         // 179 │ 180 ┤ 191 ┐ 192 └ 193 ┴ 194 ┬ 195 ├ 196 ─ 197 ┼   217 ┘ 218 ┌ 
-
         // 185 ╣ 186 ║ 187 ╗ 188 ╝ 200 ╚ 201 ╔ 202 ╩ 203 ╦ 204 ╠ 205 ═ 206 ╬
 
         StringBuilder sb = new StringBuilder();
 
         sb.Append("╔═══╦═══╦═══╗\n");
-        for (int l = 0; l < 9; l++)
+        for (int index = 0; index < 81; index++)
         {
-            for (int c = 0; c < 9; c++)
+            if (index > 1)
             {
-                if (c % 3 == 0) sb.Append("║");
+                if (index % 9 == 0)
+                    sb.Append("║\n");
 
-                SudokuCell cell = AllCellsGrid[c, l];
-                sb.Append(cell.hasOnlyOneSolution ?
-                    cell.solutionNumber :
-                    (withEntropyEncoded ? entropyToString[cell.entropy].ToLower() : "·"));  // DONT USE <'>
+                if (index % (9 * 3) == 0)
+                    sb.Append("╠═══╬═══╬═══╣\n");
             }
-            sb.Append("║\n");
 
-            if (l < 8 && l % 3 == 2) sb.Append("╠═══╬═══╬═══╣\n");
+            if (index % 3 == 0) sb.Append("║");
+
+            int cell = grid[index];
+            sb.Append(cell > 0 ? cell : "·");  // DONT USE <'>
         }
-        sb.Append("╚═══╩═══╩═══╝");
+        sb.Append("║\n╚═══╩═══╩═══╝");
 
         return sb.ToString();
     }
 
-    public SudokuCell GetLowestEntropyCell()
+    public override string ToString()
     {
-        throw new NotImplementedException();
-        return null;
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < 81; i++)
+        {
+            int cell = grid[i];
+            sb.Append(cell > 0 ? cell : "-"); // DONT USE <'>
+        }
+
+        //Debug.Log(sb.Length + " ► SudokuGrid === " + sb.ToString());
+
+        return sb.ToString();
     }
 
-    public bool IsWin()
+    private bool IsValidLineColumnBox(int gridIndex, int val)
     {
-        throw new NotImplementedException();
+        int lineIndex = gridIndex / 9;
+        int columnIndex = gridIndex % 9;
+        int boxIndex = ((gridIndex / 3) % 3 + (gridIndex / 27) * 3);
+        int insideBoxIndex = (gridIndex % 3 + ((gridIndex / 9) % 3) * 3);
+
+        int offset = lineIndex * 9;
+        for (int c = 0; c < 9; c++)
+        {
+            if (offset + c == gridIndex) continue;
+
+            if (grid[offset + c] == val) return false;
+        }
+
+        for (int lineOffset = 0; lineOffset < 81; lineOffset += 9)
+        {
+            if (lineOffset + columnIndex == gridIndex) continue;
+
+            if (grid[lineOffset + columnIndex] == val) return false;
+        }
+
+        for (int i = 0; i < 9; i++)
+        {
+            if (insideBoxIndex == i) continue;
+
+            if (grid[BoxLookupTab[boxIndex, i]] == val) return false;
+        }
+
+        // finally
+        return true;
+    }
+
+    private bool GridIsComplete()
+    {
+        foreach (int v in grid) if (v == 0) return false;
+
+        return true;
+    }
+
+    public bool Resolve()
+    {
+        ConstructAllPossibilitiesNodes();
+
+        if (nodes.Count == 0) // HAPPENS IN VERY EASY GRID, DUe TO COSNTRAINTS AND AUTO-FILL GRID !!!
+            return IsValid(true);
+
+        int currentNodeIndex = 0;
+        int val;
+        SudokuNode currentNode;
+        int maxNodeReached = 0; // pour optimiser l'annulation des valeurs des noeuds suivants
+
+        while (!GridIsComplete())
+        {
+            currentNode = nodes[currentNodeIndex];
+
+            bool goToNextNode = false;
+            do
+            {
+                val = currentNode.GetNextValue();
+                if (val == 0)
+                {
+                    // plus de valeur disponible, on reboucle, et on remonte vers le noeud précédent
+                    grid[currentNode.gridIndex] = 0;
+                    currentNodeIndex--;
+
+                    if (currentNodeIndex < 0) return false; // désespoir !!!!!
+
+                    /*
+                    for (int subnodeI = currentNodeIndex + 1; subnodeI <= maxNodeReached; subnodeI++)
+                        grid[nodes[subnodeI].gridIndex] = 0;
+                    */
+
+                    goToNextNode = true;
+                }
+                else
+                {
+                    // si c 'est bon, et on teste la validité
+                    if (IsValidLineColumnBox(currentNode.gridIndex, val))
+                    {
+                        // si valide, on affectue la grille  on passe au noeud suivant
+                        grid[currentNode.gridIndex] = val;
+                        currentNodeIndex++;
+
+                        //Debug.Log(currentNode.gridIndex + " ►►► " + val);
+
+                        if (currentNodeIndex >= nodes.Count) return true; // résultat ?????
+
+                        if (currentNodeIndex > maxNodeReached)
+                            maxNodeReached = currentNodeIndex;
+
+                        goToNextNode = true;
+                    }
+
+                    // sinon, on prend la valeur suivante du même noeud, au tour suivant
+                }
+            }
+            while (!goToNextNode);
+
+        }
+
         return false;
     }
-
-    public bool IsValid()
-    {
-        throw new NotImplementedException();
-        return false;
-    }
-
 
 }

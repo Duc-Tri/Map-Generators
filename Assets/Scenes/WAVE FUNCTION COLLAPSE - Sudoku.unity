@@ -604,7 +604,7 @@ MonoBehaviour:
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_PressedColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
@@ -625,8 +625,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2038517338}
-        m_TargetAssemblyTypeName: SudokuSolver, Assembly-CSharp
+      - m_Target: {fileID: 2038517342}
+        m_TargetAssemblyTypeName: GUISudoku, Assembly-CSharp
         m_MethodName: SolveOneStep
         m_Mode: 1
         m_Arguments:
@@ -798,7 +798,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4061bac31e61d2b42913a95c495d6586, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberAuthorized: 000000000000000000
+  possibilities: 000000000000000000
 --- !u!1 &584556722
 GameObject:
   m_ObjectHideFlags: 0
@@ -862,7 +862,7 @@ MonoBehaviour:
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_PressedColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
@@ -883,8 +883,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2038517338}
-        m_TargetAssemblyTypeName: SudokuSolver, Assembly-CSharp
+      - m_Target: {fileID: 2038517342}
+        m_TargetAssemblyTypeName: GUISudoku, Assembly-CSharp
         m_MethodName: BackOneStep
         m_Mode: 1
         m_Arguments:
@@ -996,7 +996,7 @@ MonoBehaviour:
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_PressedColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
@@ -1017,8 +1017,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2038517338}
-        m_TargetAssemblyTypeName: SudokuSolver, Assembly-CSharp
+      - m_Target: {fileID: 2038517342}
+        m_TargetAssemblyTypeName: GUISudoku, Assembly-CSharp
         m_MethodName: SolveAll
         m_Mode: 1
         m_Arguments:
@@ -1693,7 +1693,7 @@ MonoBehaviour:
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_PressedColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
@@ -1714,8 +1714,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2038517338}
-        m_TargetAssemblyTypeName: SudokuSolver, Assembly-CSharp
+      - m_Target: {fileID: 2038517342}
+        m_TargetAssemblyTypeName: GUISudoku, Assembly-CSharp
         m_MethodName: ResetAllCells
         m_Mode: 6
         m_Arguments:
@@ -2269,7 +2269,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 431.34, y: 1000}
+  m_SizeDelta: {x: 313.8, y: 1000}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1576801690
 MonoBehaviour:
@@ -2278,7 +2278,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1576801688}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -2291,7 +2291,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: bd620b082d760324bad8799045589740, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -3417,7 +3417,7 @@ MonoBehaviour:
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_PressedColor: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
@@ -3438,8 +3438,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2038517338}
-        m_TargetAssemblyTypeName: SudokuSolver, Assembly-CSharp
+      - m_Target: {fileID: 2038517342}
+        m_TargetAssemblyTypeName: GUISudoku, Assembly-CSharp
         m_MethodName: Fill
         m_Mode: 1
         m_Arguments:
@@ -3499,8 +3499,8 @@ GameObject:
   - component: {fileID: 2038517336}
   - component: {fileID: 2038517341}
   - component: {fileID: 2038517339}
-  - component: {fileID: 2038517338}
   - component: {fileID: 2038517337}
+  - component: {fileID: 2038517342}
   m_Layer: 5
   m_Name: --- SUDOKU SOLVER ---
   m_TagString: Untagged
@@ -3553,19 +3553,6 @@ MonoBehaviour:
   m_Spacing: {x: 4, y: 4}
   m_Constraint: 1
   m_ConstraintCount: 9
---- !u!114 &2038517338
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2038517335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16129b0719a53a84db0616baa0da9ae5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  original: {fileID: 509958490}
 --- !u!114 &2038517339
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3604,3 +3591,16 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 1
   m_TargetDisplay: 0
+--- !u!114 &2038517342
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2038517335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc1fbdde6c0eda644b7fedb70d63487e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  original: {fileID: 509958490}

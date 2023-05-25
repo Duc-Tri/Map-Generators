@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Net.NetworkInformation;
 using UnityEditor.Experimental.GraphView;
 
-public class SolvingNode
+public class OldSolvingNode
 {
     private enum NodeStates : byte { NONE, INVALID, ONGOING, VALID }
     private NodeStates nodeState;
@@ -12,26 +12,26 @@ public class SolvingNode
 
     public int IndexNodeSolution;
 
-    public SolvingNode parentNode;
-    List<SolvingNode> children;
+    public OldSolvingNode parentNode;
+    List<OldSolvingNode> children;
 
     public string flatTextGrid; // WE KEEP THE SUDOKU IN STRING FORM !!!
 
-    public SolvingNode()
+    public OldSolvingNode()
     {
         nodeState = NodeStates.NONE;
     }
-    public SolvingNode(SolvingNode parent, int i) : base()
+    public OldSolvingNode(OldSolvingNode parent, int i) : base()
     {
         IndexNodeSolution = i;
         parentNode = parent;
     }
 
-    public string FillChildrenWithSolutions(SudokuCellUI[,] allCellsGrid)
+    public string FillChildrenWithSolutions(GUISudokuCell[,] allCellsGrid)
     {
         //if (children != null && children.Count > 0) return "ALREADY FILLED"; // ALREADY FILLED
 
-        children = new List<SolvingNode>();
+        children = new List<OldSolvingNode>();
 
         for (int l = 0; l < 9; l++)
             for (int c = 0; c < 9; c++)
@@ -47,17 +47,17 @@ public class SolvingNode
             }
 
         string s = "";
-        foreach (SolvingNode node in children) s += node.ToString();
+        foreach (OldSolvingNode node in children) s += node.ToString();
 
         return s;
     }
 
-    public SolvingNode SetSolutionFromLowestEntropyChild()
+    public OldSolvingNode SetSolutionFromLowestEntropyChild()
     {
         nodeState = NodeStates.ONGOING;
 
         int minEntropy = int.MaxValue;
-        SolvingNode minEntropyNode = null;
+        OldSolvingNode minEntropyNode = null;
 
         while (true)
         {
@@ -122,7 +122,7 @@ public class SolvingNode
         flatTextGrid = s;
     }
 
-    internal string InsertIntoFlatTextGrid(SudokuCell lowestEntropyCell, int number)
+    internal string InsertIntoFlatTextGrid(OldSudokuCell lowestEntropyCell, int number)
     {
         throw new NotImplementedException();
     }
