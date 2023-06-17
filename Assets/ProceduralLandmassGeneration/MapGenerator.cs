@@ -11,14 +11,36 @@ namespace ProceduralLandmassGeneration
         public int mapHeight;
         public float noiseScale;
 
+        public int octaves;
+
+        [Range(0f, 1f)]
+        public float persistance;
+        public float lacunarity;
+
+        public int seed;
+        public Vector2 offset;
+
+
         public bool autoUpdate;
 
         public void GenerateMap()
         {
-            float[,] noiseMap = Noise.GenerateNoiseMap(mapWidth, mapHeight, noiseScale);
+            float[,] noiseMap = Noise.GenerateNoiseMap(mapWidth, mapHeight, seed, noiseScale, octaves, persistance, lacunarity, offset);
 
-            MapDisplay display=FindAnyObjectByType<MapDisplay>();
+            MapDisplay display = FindAnyObjectByType<MapDisplay>();
             display.DrawNoiseMap(noiseMap);
+        }
+
+        private void OnValidate()
+        {
+            if (mapWidth < 1) mapWidth = 1;
+
+            if (mapHeight < 1) mapHeight = 1;
+
+            if (lacunarity < 1) lacunarity = 1;
+
+            if (octaves < 0) octaves = 1;
+
         }
     }
 }

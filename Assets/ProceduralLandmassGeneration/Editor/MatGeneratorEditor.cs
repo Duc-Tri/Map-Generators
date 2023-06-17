@@ -12,13 +12,12 @@ namespace ProceduralLandmassGeneration
         {
             //base.OnInspectorGUI();
             MapGenerator mapGen = (MapGenerator)target;
-            
-            if(DrawDefaultInspector())
+
+            // if modifications
+            if (DrawDefaultInspector())
             {
-                if(mapGen.autoUpdate)
-                {
+                if (mapGen.autoUpdate)
                     mapGen.GenerateMap();
-                }
             }
 
             if (GUILayout.Button("Generate"))
