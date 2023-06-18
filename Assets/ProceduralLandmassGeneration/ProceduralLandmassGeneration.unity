@@ -455,7 +455,7 @@ Transform:
   m_GameObject: {fileID: 981492954}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 1, z: 100}
+  m_LocalScale: {x: 200, y: 1, z: 200}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -473,7 +473,7 @@ GameObject:
   - component: {fileID: 1718790467}
   - component: {fileID: 1718790466}
   m_Layer: 0
-  m_Name: MapGenerator=====
+  m_Name: =====MapGenerator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -504,15 +504,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad97640b0e9fbd248b83f4fbb150389b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mapWidth: 100
-  mapHeight: 100
-  noiseScale: 16.9
-  octaves: 2
-  persistance: 0.5
-  lacunarity: 4.73
-  seed: 1
+  drawMode: 1
+  mapWidth: 200
+  mapHeight: 200
+  noiseScale: 87.9
+  octaves: 5
+  persistance: 0.182
+  lacunarity: 8.4
+  seed: 436
   offset: {x: 16.09, y: 35.7}
   autoUpdate: 1
+  regions:
+  - name: Water Deep
+    height: 0.3
+    color: {r: 0.19428623, g: 0.22012344, b: 0.6981132, a: 0}
+  - name: Water Shallow
+    height: 0.4
+    color: {r: 0.31746176, g: 0.47901508, b: 0.7735849, a: 0}
+  - name: Sand
+    height: 0.45
+    color: {r: 0.7506113, g: 0.7830189, b: 0.35826808, a: 0}
+  - name: Grass
+    height: 0.55
+    color: {r: 0.26361236, g: 0.7075472, b: 0.25698647, a: 0}
+  - name: Grass 2
+    height: 0.6
+    color: {r: 0.11289488, g: 0.4245283, b: 0.11013707, a: 0}
+  - name: Rock
+    height: 0.7
+    color: {r: 0.4528302, g: 0.3217254, b: 0.29263082, a: 0}
+  - name: Rock2
+    height: 0.9
+    color: {r: 0.26361236, g: 0.7075472, b: 0.25698647, a: 0}
+  - name: Snow
+    height: 1
+    color: {r: 1, g: 1, b: 1, a: 0}
 --- !u!4 &1718790468
 Transform:
   m_ObjectHideFlags: 0
