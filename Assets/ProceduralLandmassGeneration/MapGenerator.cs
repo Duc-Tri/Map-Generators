@@ -13,7 +13,7 @@ namespace ProceduralLandmassGeneration
         [Range(0, 6)]
         public int levelOfDetail; // 1=no modification
         // Level Of Detail
-        const int mapChunkSize = 241; // factor 2,4,6,8,10,12 nicely
+        public const int mapChunkSize = 241; // factor 2, 4, 6, 8, 10, 12 nicely
 
         public float noiseScale;
 
@@ -65,6 +65,7 @@ namespace ProceduralLandmassGeneration
             if (lacunarity < 1) lacunarity = 1;
 
             if (octaves < 0) octaves = 1;
+
         }
     }
 
