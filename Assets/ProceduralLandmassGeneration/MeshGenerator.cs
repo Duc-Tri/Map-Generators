@@ -4,28 +4,33 @@ namespace ProceduralLandmassGeneration
 {
     public class MeshGenerator
     {
-        public static MeshData GenerateTerrainMesh(float[,] heighMap)
+        public static MeshData GenerateTerrainMesh(float[,] heighMap, float heightMultiplier, AnimationCurve heightCurve, int levelOfDetail)
         {
             int width = heighMap.GetLength(0);
             int height = heighMap.GetLength(1);
             float topLeftX = (width - 1) / -2f;
             float topLeftZ = (height - 1) / 2f;
 
-            MeshData meshData = new MeshData(width, height);
+            int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+            int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
+
+            MeshData meshData = new MeshData(verticesPerLine, verticesPerLine);
             int vertexIndex = 0;
 
-            for (int y = 0; y < height; y++)
+            for (int y = 0; y < height; y += meshSimplificationIncrement)
             {
-                for (int x = 0; x < width; x++)
+                for (int x = 0; x < width; x += meshSimplificationIncrement)
                 {
-                    meshData.vertices[vertexIndex] = new Vector3(topLeftX + x, heighMap[x, y], topLeftZ - y);
+                    meshData.vertices[vertexIndex] = new Vector3(topLeftX + x,
+                        heightCurve.Evaluate(heighMap[x, y]) * heightMultiplier,
+                        topLeftZ - y);
                     meshData.uvs[vertexIndex] = new Vector2(x / (float)width, y / (float)height);
 
                     if (x < width - 1 && y < height - 1)
                     {
                         // 2 triangles = square
-                        meshData.AddTriangle(vertexIndex, vertexIndex + width + 1, vertexIndex + width);
-                        meshData.AddTriangle(vertexIndex + width + 1, vertexIndex, vertexIndex + 1);
+                        meshData.AddTriangle(vertexIndex, vertexIndex + verticesPerLine + 1, vertexIndex + verticesPerLine);
+                        meshData.AddTriangle(vertexIndex + verticesPerLine + 1, vertexIndex, vertexIndex + 1);
                     }
 
                     vertexIndex++;
@@ -37,7 +42,7 @@ namespace ProceduralLandmassGeneration
         }
 
     }
-    
+
     public class MeshData
     {
         public Vector3[] vertices;
