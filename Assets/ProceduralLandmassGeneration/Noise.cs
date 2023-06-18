@@ -6,7 +6,6 @@ namespace ProceduralLandmassGeneration
 {
     public class Noise
     {
-
         public static float[,] GenerateNoiseMap(int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset)
         {
             float[,] noiseMap = new float[mapWidth, mapHeight];
@@ -20,7 +19,7 @@ namespace ProceduralLandmassGeneration
                 octaveOffsets[i] = new Vector2(offsetX, offsetY);
             }
 
-            if (scale <= 0) scale = 0.001f;
+            if (scale <= 0) scale = 0.0001f;
 
             float maxNoiseHeight = float.MinValue;
             float minNoiseHeight = float.MaxValue;
