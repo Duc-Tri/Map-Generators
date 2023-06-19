@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace ProceduralLandmassGeneration
@@ -6,11 +8,17 @@ namespace ProceduralLandmassGeneration
     // THREADED
     public class EndlessTerrain : MonoBehaviour
     {
-        public const float maxViewDst = 450;
+        const float viewerMoveThresholdForChunkUpdate = 25f;
+        const float sqrViewerMoveThresholdForChunkUpdate = viewerMoveThresholdForChunkUpdate * viewerMoveThresholdForChunkUpdate;
+
+        public LODInfo[] detailLevels;
+        public static float maxViewDst = -1;
+
         public Transform viewer;
         public Material mapMaterial;
 
         public static Vector2 viewerPosition;
+        Vector2 viewerPositionOld = Vector2.negativeInfinity;
         static MapGenerator mapGenerator;
         int chunkSize;
         int chunkVisibleInViewDst;
@@ -21,16 +29,19 @@ namespace ProceduralLandmassGeneration
         private void Start()
         {
             mapGenerator = FindObjectOfType<MapGenerator>();
+
+            maxViewDst = detailLevels[detailLevels.Length - 1].visibleDstThreshold;
             chunkSize = MapGenerator.mapChunkSize - 1;
             chunkVisibleInViewDst = Mathf.RoundToInt(maxViewDst / chunkSize);
-
-            //MapGenerator.reqestMapdata
         }
 
         private void Update()
         {
             viewerPosition = new Vector2(viewer.position.x, viewer.position.z);
-            UpdateVisibleChunks();
+            if ((viewerPositionOld - viewerPosition).sqrMagnitude > sqrViewerMoveThresholdForChunkUpdate)
+            {
+                UpdateVisibleChunks();
+            }
         }
 
         void UpdateVisibleChunks()
@@ -57,7 +68,7 @@ namespace ProceduralLandmassGeneration
                     }
                     else
                     {
-                        terrainChunkDic.Add(viewChunkCoord, new TerrainChunk(viewChunkCoord, chunkSize, transform, mapMaterial));
+                        terrainChunkDic.Add(viewChunkCoord, new TerrainChunk(viewChunkCoord, chunkSize, detailLevels, transform, mapMaterial));
                     }
                 }
             }
@@ -70,9 +81,15 @@ namespace ProceduralLandmassGeneration
             Bounds bounds;
             MeshRenderer meshRenderer;
             MeshFilter meshFilter;
+            LODInfo[] detailLevels;
+            LODMesh[] lodMeshes;
+            MapData mapData;
+            bool mapDataReceived;
+            int previousLODIndex = -1;
 
-            public TerrainChunk(Vector2 coord, int size, Transform parent, Material material)
+            public TerrainChunk(Vector2 coord, int size, LODInfo[] detailLevels, Transform parent, Material material)
             {
+                this.detailLevels = detailLevels;
                 position = coord * size;
                 bounds = new Bounds(position, Vector2.one * size);
                 Vector3 posV3 = new Vector3(position.x, 0, position.y);
@@ -86,12 +103,23 @@ namespace ProceduralLandmassGeneration
                 meshObject.transform.parent = parent;
                 SetVisible(false);
 
-                mapGenerator.RequestMapData(OnMapDatReceived);
+                lodMeshes = new LODMesh[detailLevels.Length];
+                for (int i = 0; i < detailLevels.Length; i++)
+                    lodMeshes[i] = new LODMesh(detailLevels[i].lod, UpdateTerrainChunk);
+
+                mapGenerator.RequestMapData(position, OnMapDatReceived);
             }
 
             void OnMapDatReceived(MapData mapData)
             {
-                mapGenerator.RequestMeshData(mapData, OnMeshDataReceived);
+                this.mapData = mapData;
+                mapDataReceived = true;
+
+
+                Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.colorMap, MapGenerator.mapChunkSize, MapGenerator.mapChunkSize);
+                meshRenderer.material.mainTexture = texture;
+
+                UpdateTerrainChunk();
             }
 
             void OnMeshDataReceived(MeshData meshData)
@@ -101,9 +129,36 @@ namespace ProceduralLandmassGeneration
 
             public void UpdateTerrainChunk()
             {
-                float viewDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(viewerPosition));
-                bool visible = viewDstFromNearestEdge <= maxViewDst;
-                SetVisible(visible);
+                if (mapDataReceived)
+                {
+                    float viewDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(viewerPosition));
+                    bool visible = viewDstFromNearestEdge <= maxViewDst;
+                    if (visible)
+                    {
+                        int lodIndex = 0;
+
+                        for (int i = 0; i < detailLevels.Length - 1; i++)
+                            if (viewDstFromNearestEdge > detailLevels[i].visibleDstThreshold)
+                                lodIndex = i + 1;
+                            else
+                                break;
+
+                        if (lodIndex != previousLODIndex)
+                        {
+                            LODMesh lodMesh = lodMeshes[lodIndex];
+                            if (lodMesh.hasMesh)
+                            {
+                                previousLODIndex = lodIndex;
+                                meshFilter.mesh = lodMesh.mesh;
+                            }
+                            else if (!lodMesh.hasRequestedMesh) // NOT REQUESTED YET !
+                            {
+                                lodMesh.RequestMesh(mapData);
+                            }
+                        }
+                    }
+                    SetVisible(visible);
+                }
             }
 
             public void SetVisible(bool visible)
@@ -115,6 +170,41 @@ namespace ProceduralLandmassGeneration
             {
                 return meshObject.activeSelf;
             }
+        }
+
+        public class LODMesh
+        {
+            public Mesh mesh;
+            public bool hasRequestedMesh;
+            public bool hasMesh;
+            int lod;
+            Action updateCallback;
+
+            public LODMesh(int lod, Action updateCallback)
+            {
+                this.lod = lod;
+                this.updateCallback = updateCallback;
+            }
+
+            void OnMeshDataReceived(MeshData meshData)
+            {
+                mesh = meshData.CreateMesh();
+                hasMesh = true;
+                updateCallback();
+            }
+
+            public void RequestMesh(MapData mapData)
+            {
+                hasRequestedMesh = true;
+                mapGenerator.RequestMeshData(mapData, lod, OnMeshDataReceived);
+            }
+        }
+
+        [Serializable]
+        public struct LODInfo
+        {
+            public int lod;
+            public float visibleDstThreshold; // go next LOD when above
         }
 
     }
