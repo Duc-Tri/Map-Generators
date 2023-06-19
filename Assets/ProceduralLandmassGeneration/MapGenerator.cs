@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 namespace ProceduralLandmassGeneration
 {
+    // THREADED
     public class MapGenerator : MonoBehaviour
     {
         public enum DrawMode { NoiseMap, ColorMap, Mesh };
@@ -30,8 +32,79 @@ namespace ProceduralLandmassGeneration
 
         public bool autoUpdate;
         public TerrainType[] regions;
+        Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
+        Queue<MapThreadInfo<MeshData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
 
-        public void GenerateMap()
+
+        public void RequestMapData(Action<MapData> callback)
+        {
+            // START MapData THREAD
+            ThreadStart threadStart = delegate { MapDataThread(callback); };
+
+            new Thread(threadStart).Start();
+        }
+
+        public void RequestMeshData(MapData mapData, Action<MeshData> callback)
+        {
+            // START MapData THREAD
+            ThreadStart threadStart = delegate { MeshDataThread(mapData, callback); };
+
+            new Thread(threadStart).Start();
+        }
+
+        void MapDataThread(Action<MapData> callback)
+        {
+            // get MapData
+            MapData mapData = GenerateMapData();
+
+            // add MapData + callback to queue
+            lock (mapDataThreadInfoQueue)
+            {
+                mapDataThreadInfoQueue.Enqueue(new MapThreadInfo<MapData>(callback, mapData));
+            }
+        }
+
+        void MeshDataThread(MapData mapData, Action<MeshData> callback)
+        {
+            MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, levelOfDetail);
+            lock (meshDataThreadInfoQueue)
+            {
+                meshDataThreadInfoQueue.Enqueue(new MapThreadInfo<MeshData>(callback, meshData));
+            }
+        }
+
+        private void Update()
+        {
+            if (mapDataThreadInfoQueue.Count > 0) // CALLBACK WITH MapData
+                for (int i = 0; i < mapDataThreadInfoQueue.Count; i++)
+                {
+                    MapThreadInfo<MapData> threadInfo = mapDataThreadInfoQueue.Dequeue();
+                    threadInfo.callback(threadInfo.parameter);
+                }
+
+            if (meshDataThreadInfoQueue.Count > 0) // CALLBACK WITH MapData
+                for (int i = 0; i < meshDataThreadInfoQueue.Count; i++)
+                {
+                    MapThreadInfo<MeshData> threadInfo = meshDataThreadInfoQueue.Dequeue();
+                    threadInfo.callback(threadInfo.parameter);
+                }
+        }
+
+        public void DrawMapInEditor()
+        {
+            MapData mapData = GenerateMapData();
+            MapDisplay display = FindAnyObjectByType<MapDisplay>();
+
+            if (drawMode == DrawMode.NoiseMap)
+                display.DrawTexture(TextureGenerator.TextureFromHeightMap(mapData.heightMap));
+            else if (drawMode == DrawMode.ColorMap)
+                display.DrawTexture(TextureGenerator.TextureFromColorMap(mapData.colorMap, mapChunkSize, mapChunkSize));
+            else if (drawMode == DrawMode.Mesh)
+                display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, levelOfDetail),
+                    TextureGenerator.TextureFromColorMap(mapData.colorMap, mapChunkSize, mapChunkSize));
+        }
+
+        private MapData GenerateMapData()
         {
             float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, offset);
 
@@ -50,14 +123,7 @@ namespace ProceduralLandmassGeneration
                 }
             }
 
-            MapDisplay display = FindAnyObjectByType<MapDisplay>();
-            if (drawMode == DrawMode.NoiseMap)
-                display.DrawTexture(TextureGenerator.TextureFromHeightMap(noiseMap));
-            else if (drawMode == DrawMode.ColorMap)
-                display.DrawTexture(TextureGenerator.TextureFromColorMap(colorMap, mapChunkSize, mapChunkSize));
-            else if (drawMode == DrawMode.Mesh)
-                display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, meshHeightMultiplier, meshHeightCurve, levelOfDetail),
-                    TextureGenerator.TextureFromColorMap(colorMap, mapChunkSize, mapChunkSize));
+            return new MapData(noiseMap, colorMap);
         }
 
         private void OnValidate()
@@ -67,7 +133,19 @@ namespace ProceduralLandmassGeneration
             if (octaves < 0) octaves = 1;
 
         }
-    }
+        struct MapThreadInfo<T>
+        {
+            public readonly Action<T> callback;
+            public readonly T parameter;
+
+            public MapThreadInfo(Action<T> callback, T parameter)
+            {
+                this.callback = callback;
+                this.parameter = parameter;
+            }
+        }
+
+    } // end of  class MapGenerator ===============================================================
 
     [Serializable]
     public struct TerrainType
@@ -75,6 +153,18 @@ namespace ProceduralLandmassGeneration
         public string name;
         public float height;
         public Color color;
+    }
+
+    public struct MapData
+    {
+        public float[,] heightMap;
+        public Color[] colorMap;
+
+        public MapData(float[,] heightMap, Color[] colorMap)
+        {
+            this.heightMap = heightMap;
+            this.colorMap = colorMap;
+        }
     }
 
 }

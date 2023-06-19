@@ -14,16 +14,8 @@ namespace ProceduralLandmassGeneration
             MapGenerator mapGen = (MapGenerator)target;
 
             // if modifications
-            if (DrawDefaultInspector())
-            {
-                if (mapGen.autoUpdate)
-                    mapGen.GenerateMap();
-            }
-
-            if (GUILayout.Button("Generate"))
-            {
-                mapGen.GenerateMap();
-            }
+            if (GUILayout.Button("Generate") || DrawDefaultInspector() && mapGen.autoUpdate)
+                mapGen.DrawMapInEditor();
         }
 
     }

@@ -4,8 +4,11 @@ namespace ProceduralLandmassGeneration
 {
     public class MeshGenerator
     {
-        public static MeshData GenerateTerrainMesh(float[,] heighMap, float heightMultiplier, AnimationCurve heightCurve, int levelOfDetail)
+        public static MeshData GenerateTerrainMesh(float[,] heighMap, float heightMultiplier, AnimationCurve _heightCurve, int levelOfDetail)
         {
+            // for optimize each thread, instead of lock(_heightCurve)
+            AnimationCurve heightCurve = new AnimationCurve(_heightCurve.keys);
+
             int width = heighMap.GetLength(0);
             int height = heighMap.GetLength(1);
             float topLeftX = (width - 1) / -2f;
