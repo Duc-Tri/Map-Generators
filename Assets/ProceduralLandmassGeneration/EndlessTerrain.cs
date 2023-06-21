@@ -170,13 +170,13 @@ namespace ProceduralLandmassGeneration
                             }
                         }
 
-                        if(lodIndex==0)
+                        if (lodIndex == 0)
                         {
-                            if(collisionLODMesh.hasMesh)
+                            if (collisionLODMesh.hasMesh)
                             {
                                 meshCollider.sharedMesh = collisionLODMesh.mesh;
                             }
-                            else if(!collisionLODMesh.hasRequestedMesh)
+                            else if (!collisionLODMesh.hasRequestedMesh)
                             {
                                 collisionLODMesh.RequestMesh(mapData);
                             }

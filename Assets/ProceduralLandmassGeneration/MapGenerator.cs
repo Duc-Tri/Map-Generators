@@ -16,8 +16,10 @@ namespace ProceduralLandmassGeneration
 
         [Range(0, 6)]
         public int editorPreviewLOD; // 1=no modification
-        // Level Of Detail
-        public const int mapChunkSize = 239; // +2 factor 2, 4, 6, 8, 10, 12 nicely
+                                     // Level Of Detail
+
+
+        public bool useFlatShading;
 
         public float noiseScale;
 
@@ -37,6 +39,8 @@ namespace ProceduralLandmassGeneration
 
         public bool autoUpdate;
         public TerrainType[] regions;
+        static MapGenerator instance;
+
         public float[,] falloffMap;
 
         Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
@@ -45,6 +49,20 @@ namespace ProceduralLandmassGeneration
         private void Awake()
         {
             falloffMap = FalloffGenerator.GenerateFallofMap(mapChunkSize);
+        }
+
+        public static int mapChunkSize
+        {
+            get
+            {
+                if (instance == null)
+                    instance = FindObjectOfType<MapGenerator>();
+
+                if (instance.useFlatShading)
+                    return 95;
+                else
+                    return 239; // +2 factor 2, 4, 6, 8, 10, 12 nicely
+            }
         }
 
         public void RequestMapData(Vector2 center, Action<MapData> callback)
@@ -77,7 +95,7 @@ namespace ProceduralLandmassGeneration
 
         void MeshDataThread(MapData mapData, int lod, Action<MeshData> callback)
         {
-            MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, lod);
+            MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, lod, useFlatShading);
             lock (meshDataThreadInfoQueue)
             {
                 meshDataThreadInfoQueue.Enqueue(new MapThreadInfo<MeshData>(callback, meshData));
@@ -111,7 +129,7 @@ namespace ProceduralLandmassGeneration
             else if (drawMode == DrawMode.ColorMap)
                 display.DrawTexture(TextureGenerator.TextureFromColorMap(mapData.colorMap, mapChunkSize, mapChunkSize));
             else if (drawMode == DrawMode.Mesh)
-                display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, editorPreviewLOD),
+                display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, editorPreviewLOD, useFlatShading),
                     TextureGenerator.TextureFromColorMap(mapData.colorMap, mapChunkSize, mapChunkSize));
             else if (drawMode == DrawMode.FalloffMap)
                 display.DrawTexture(TextureGenerator.TextureFromHeightMap(FalloffGenerator.GenerateFallofMap(mapChunkSize)));

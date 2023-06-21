@@ -4,7 +4,7 @@ namespace ProceduralLandmassGeneration
 {
     public class MeshGenerator
     {
-        public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightMultiplier, AnimationCurve _heightCurve, int levelOfDetail)
+        public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightMultiplier, AnimationCurve _heightCurve, int levelOfDetail, bool useFlatShading)
         {
             // for optimize each thread, instead of lock(_heightCurve)
             AnimationCurve heightCurve = new AnimationCurve(_heightCurve.keys);
@@ -19,7 +19,7 @@ namespace ProceduralLandmassGeneration
 
             int verticesPerLine = (meshSize - 1) / meshSimplificationIncrement + 1;
 
-            MeshData meshData = new MeshData(verticesPerLine);
+            MeshData meshData = new MeshData(verticesPerLine, useFlatShading);
             int[,] vertexIndicesMap = new int[borderedSize, borderedSize];
             int meshVertexIndex = 0;
             int borderVertexIndex = -1;
@@ -72,7 +72,7 @@ namespace ProceduralLandmassGeneration
                 }
             }
 
-            meshData.BakedNormals();
+            meshData.Finalize();
 
             return meshData; // for thread later
         }
@@ -90,10 +90,11 @@ namespace ProceduralLandmassGeneration
         Vector3[] borderVertices;
         int[] borderTriangles;
         int borderTrianlgeIndex;
+        bool useFlatShading;
 
-
-        public MeshData(int verticesPerLine)
+        public MeshData(int verticesPerLine, bool useFlatShading)
         {
+            this.useFlatShading = useFlatShading;
             vertices = new Vector3[verticesPerLine * verticesPerLine];
             uvs = new Vector2[verticesPerLine * verticesPerLine];
             triangles = new int[(verticesPerLine - 1) * (verticesPerLine - 1) * 6];
@@ -189,9 +190,33 @@ namespace ProceduralLandmassGeneration
             return Vector3.Cross(sideAB, sideAC).normalized;
         }
 
+        public void Finalize()
+        {
+            if (useFlatShading)
+                FlatShading();
+            else
+                BakedNormals();
+        }
+
         public void BakedNormals()
         {
             bakedNormals = CalculateNormals();
+        }
+
+        void FlatShading()
+        {
+            Vector3[] flatShaderVertices = new Vector3[triangles.Length];
+            Vector2[] flatShadedUvs = new Vector2[triangles.Length];
+
+            for (int i = 0; i < triangles.Length; i++)
+            {
+                flatShaderVertices[i] = vertices[triangles[i]];
+                flatShadedUvs[i] = uvs[triangles[i]];
+                triangles[i] = i;
+            }
+
+            vertices = flatShaderVertices;
+            uvs = flatShadedUvs;
         }
 
         public Mesh CreateMesh()
@@ -200,8 +225,11 @@ namespace ProceduralLandmassGeneration
             mesh.vertices = vertices;
             mesh.uv = uvs;
             mesh.triangles = triangles;
-            mesh.normals = CalculateNormals();
-            //mesh.RecalculateNormals();
+
+            if (useFlatShading)
+                mesh.RecalculateNormals();
+            else
+                mesh.normals = CalculateNormals();
 
             return mesh;
         }

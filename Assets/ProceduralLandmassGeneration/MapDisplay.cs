@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace ProceduralLandmassGeneration
 {
-
     public class MapDisplay : MonoBehaviour
     {
         public Renderer textureRender;
