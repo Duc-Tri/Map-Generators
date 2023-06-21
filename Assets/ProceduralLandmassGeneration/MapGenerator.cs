@@ -9,7 +9,7 @@ namespace ProceduralLandmassGeneration
     // THREADED
     public class MapGenerator : MonoBehaviour
     {
-        public enum DrawMode { NoiseMap, ColorMap, Mesh };
+        public enum DrawMode { NoiseMap, ColorMap, Mesh, FalloffMap };
         public DrawMode drawMode;
 
         public Noise.NormalizeMode normalizeMode;
@@ -17,7 +17,7 @@ namespace ProceduralLandmassGeneration
         [Range(0, 6)]
         public int editorPreviewLOD; // 1=no modification
         // Level Of Detail
-        public const int mapChunkSize = 241; // factor 2, 4, 6, 8, 10, 12 nicely
+        public const int mapChunkSize = 239; // +2 factor 2, 4, 6, 8, 10, 12 nicely
 
         public float noiseScale;
 
@@ -29,14 +29,23 @@ namespace ProceduralLandmassGeneration
 
         public int seed;
         public Vector2 offset;
+
+        public bool useFallof;
+
         public float meshHeightMultiplier;
         public AnimationCurve meshHeightCurve;
 
         public bool autoUpdate;
         public TerrainType[] regions;
+        public float[,] falloffMap;
+
         Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
         Queue<MapThreadInfo<MeshData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
 
+        private void Awake()
+        {
+            falloffMap = FalloffGenerator.GenerateFallofMap(mapChunkSize);
+        }
 
         public void RequestMapData(Vector2 center, Action<MapData> callback)
         {
@@ -104,23 +113,30 @@ namespace ProceduralLandmassGeneration
             else if (drawMode == DrawMode.Mesh)
                 display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, editorPreviewLOD),
                     TextureGenerator.TextureFromColorMap(mapData.colorMap, mapChunkSize, mapChunkSize));
+            else if (drawMode == DrawMode.FalloffMap)
+                display.DrawTexture(TextureGenerator.TextureFromHeightMap(FalloffGenerator.GenerateFallofMap(mapChunkSize)));
         }
 
         private MapData GenerateMapData(Vector2 center)
         {
-            float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, center + offset, normalizeMode);
+            float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2, seed, noiseScale, octaves, persistance, lacunarity, center + offset, normalizeMode);
 
             Color[] colorMap = new Color[mapChunkSize * mapChunkSize];
             for (int y = 0; y < mapChunkSize; y++)
             {
                 for (int x = 0; x < mapChunkSize; x++)
                 {
+                    if (useFallof)
+                        noiseMap[x, y] = Mathf.Clamp01(noiseMap[x, y] - falloffMap[x, y]);
+
                     float currentHeight = noiseMap[x, y];
                     for (int i = 0; i < regions.Length; i++)
+                    {
                         if (currentHeight >= regions[i].height)
                             colorMap[y * mapChunkSize + x] = regions[i].color;
                         else
                             break;
+                    }
                 }
             }
 
@@ -131,9 +147,11 @@ namespace ProceduralLandmassGeneration
         {
             if (lacunarity < 1) lacunarity = 1;
 
-            if (octaves < 0) octaves = 1;
+            if (octaves < 0) octaves = 0;
 
+            falloffMap = FalloffGenerator.GenerateFallofMap(mapChunkSize);
         }
+
         struct MapThreadInfo<T>
         {
             public readonly Action<T> callback;
@@ -144,6 +162,8 @@ namespace ProceduralLandmassGeneration
                 this.callback = callback;
                 this.parameter = parameter;
             }
+
+
         }
 
     } // end of  class MapGenerator ===============================================================
