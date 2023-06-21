@@ -74,15 +74,19 @@ namespace ProceduralLandmassGeneration
             }
         }
 
-        private class TerrainChunk
+        private class TerrainChunk // inside EndlessTerrain
         {
             Vector2 position;
             GameObject meshObject;
             Bounds bounds;
             MeshRenderer meshRenderer;
             MeshFilter meshFilter;
+            MeshCollider meshCollider;
+
             LODInfo[] detailLevels;
             LODMesh[] lodMeshes;
+            LODMesh collisionLODMesh;
+
             MapData mapData;
             bool mapDataReceived;
             int previousLODIndex = -1;
@@ -97,16 +101,24 @@ namespace ProceduralLandmassGeneration
                 meshObject = new GameObject("Terrain Chunk");
                 meshRenderer = meshObject.AddComponent<MeshRenderer>();
                 meshFilter = meshObject.AddComponent<MeshFilter>();
+                meshCollider = meshObject.AddComponent<MeshCollider>();
+
                 meshRenderer.sharedMaterial = material;
                 meshObject.transform.position = posV3 * scale;
                 meshObject.transform.localScale = Vector3.one * scale;
-
                 meshObject.transform.parent = parent;
+
                 SetVisible(false);
 
                 lodMeshes = new LODMesh[detailLevels.Length];
                 for (int i = 0; i < detailLevels.Length; i++)
+                {
                     lodMeshes[i] = new LODMesh(detailLevels[i].lod, UpdateTerrainChunk);
+                    if (detailLevels[i].useForCollider)
+                    {
+                        collisionLODMesh = lodMeshes[i];
+                    }
+                }
 
                 mapGenerator.RequestMapData(position, OnMapDatReceived);
             }
@@ -155,6 +167,18 @@ namespace ProceduralLandmassGeneration
                             else if (!lodMesh.hasRequestedMesh) // NOT REQUESTED YET !
                             {
                                 lodMesh.RequestMesh(mapData);
+                            }
+                        }
+
+                        if(lodIndex==0)
+                        {
+                            if(collisionLODMesh.hasMesh)
+                            {
+                                meshCollider.sharedMesh = collisionLODMesh.mesh;
+                            }
+                            else if(!collisionLODMesh.hasRequestedMesh)
+                            {
+                                collisionLODMesh.RequestMesh(mapData);
                             }
                         }
 
@@ -208,6 +232,7 @@ namespace ProceduralLandmassGeneration
         {
             public int lod;
             public float visibleDstThreshold; // go next LOD when above
+            public bool useForCollider;
         }
 
     }

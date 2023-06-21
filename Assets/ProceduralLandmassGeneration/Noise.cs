@@ -8,7 +8,6 @@ namespace ProceduralLandmassGeneration
     {
         public enum NormalizeMode { Local, Global };
 
-
         public static float[,] GenerateNoiseMap(int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset, NormalizeMode normalizeMode)
         {
             float[,] noiseMap = new float[mapWidth, mapHeight];
@@ -71,6 +70,7 @@ namespace ProceduralLandmassGeneration
             }
 
             // normalize noisemap
+
             for (int y = 0; y < mapHeight; y++)
                 for (int x = 0; x < mapWidth; x++)
                     // minNoiseHeight, maxNoiseHeight different depending chunk !
@@ -78,9 +78,10 @@ namespace ProceduralLandmassGeneration
                         noiseMap[x, y] = Mathf.InverseLerp(minLocalNoiseHeight, maxLocalNoiseHeight, noiseMap[x, y]);
                     else
                     {
-                        float normalizeHeight = (noiseMap[x, y] + 1) / maxPossibleHeight;
+                        float normalizeHeight = (noiseMap[x, y] + 1) / (maxPossibleHeight / 0.9f);
                         noiseMap[x, y] = Mathf.Clamp(normalizeHeight, 0, int.MaxValue);
                     }
+
 
             return noiseMap;
         }

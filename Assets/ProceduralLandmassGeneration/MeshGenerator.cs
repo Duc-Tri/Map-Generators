@@ -22,13 +22,14 @@ namespace ProceduralLandmassGeneration
             MeshData meshData = new MeshData(verticesPerLine);
             int[,] vertexIndicesMap = new int[borderedSize, borderedSize];
             int meshVertexIndex = 0;
-            int borderVertexIndex = 0;
+            int borderVertexIndex = -1;
 
             for (int y = 0; y < borderedSize; y += meshSimplificationIncrement)
             {
                 for (int x = 0; x < borderedSize; x += meshSimplificationIncrement)
                 {
                     bool isBorderVertex = (y == 0 || y == borderedSize - 1 || x == 0 || x == borderedSize - 1);
+
                     if (isBorderVertex)
                     {
                         vertexIndicesMap[x, y] = borderVertexIndex;
@@ -50,7 +51,7 @@ namespace ProceduralLandmassGeneration
 
                     Vector2 percent = new Vector2((x - meshSimplificationIncrement) / (float)meshSize, (y - meshSimplificationIncrement) / (float)meshSize);
 
-                    float height = heightCurve.Evaluate(heightMap[x, y] * heightMultiplier);
+                    float height = heightCurve.Evaluate(heightMap[x, y]) * heightMultiplier;
 
                     Vector3 vertexPosition = new Vector3(topLeftX + percent.x * meshSizeUnsimplified,
                         height, topLeftZ - percent.y * meshSizeUnsimplified);
@@ -71,6 +72,8 @@ namespace ProceduralLandmassGeneration
                 }
             }
 
+            meshData.BakedNormals();
+
             return meshData; // for thread later
         }
 
@@ -82,6 +85,7 @@ namespace ProceduralLandmassGeneration
         Vector2[] uvs;
         int[] triangles;
         int triangleIndex;
+        Vector3[] bakedNormals;
 
         Vector3[] borderVertices;
         int[] borderTriangles;
@@ -183,6 +187,11 @@ namespace ProceduralLandmassGeneration
             Vector3 sideAC = pointC - pointA;
 
             return Vector3.Cross(sideAB, sideAC).normalized;
+        }
+
+        public void BakedNormals()
+        {
+            bakedNormals = CalculateNormals();
         }
 
         public Mesh CreateMesh()
