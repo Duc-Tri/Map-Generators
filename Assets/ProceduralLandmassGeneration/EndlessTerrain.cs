@@ -8,7 +8,6 @@ namespace ProceduralLandmassGeneration
     // THREADED
     public class EndlessTerrain : MonoBehaviour
     {
-        const float scale = 10f;
         const float viewerMoveThresholdForChunkUpdate = 25f;
         const float sqrViewerMoveThresholdForChunkUpdate = viewerMoveThresholdForChunkUpdate * viewerMoveThresholdForChunkUpdate;
 
@@ -32,13 +31,15 @@ namespace ProceduralLandmassGeneration
             mapGenerator = FindObjectOfType<MapGenerator>();
 
             maxViewDst = detailLevels[detailLevels.Length - 1].visibleDstThreshold;
-            chunkSize = MapGenerator.mapChunkSize - 1;
+            chunkSize = mapGenerator.mapChunkSize - 1;
             chunkVisibleInViewDst = Mathf.RoundToInt(maxViewDst / chunkSize);
+
+            UpdateVisibleChunks();
         }
 
         private void Update()
         {
-            viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / scale;
+            viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / mapGenerator.terrainData.uniformScale;
 
             if ((viewerPositionOld - viewerPosition).sqrMagnitude > sqrViewerMoveThresholdForChunkUpdate)
             {
@@ -104,8 +105,8 @@ namespace ProceduralLandmassGeneration
                 meshCollider = meshObject.AddComponent<MeshCollider>();
 
                 meshRenderer.sharedMaterial = material;
-                meshObject.transform.position = posV3 * scale;
-                meshObject.transform.localScale = Vector3.one * scale;
+                meshObject.transform.position = posV3 * mapGenerator.terrainData.uniformScale;
+                meshObject.transform.localScale = Vector3.one * mapGenerator.terrainData.uniformScale;
                 meshObject.transform.parent = parent;
 
                 SetVisible(false);
@@ -127,10 +128,6 @@ namespace ProceduralLandmassGeneration
             {
                 this.mapData = mapData;
                 mapDataReceived = true;
-
-
-                Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.colorMap, MapGenerator.mapChunkSize, MapGenerator.mapChunkSize);
-                meshRenderer.material.mainTexture = texture;
 
                 UpdateTerrainChunk();
             }
